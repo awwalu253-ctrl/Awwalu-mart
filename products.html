@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Awwalumart - Products</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+    <nav class="navbar" id="navbar"></nav>
+
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">
+                <i class="fas fa-box"></i> All Products
+            </h2>
+
+            <!-- Search & Filter -->
+            <div class="filter-bar">
+                <input type="text" id="searchInput" placeholder="Search products..." oninput="filterProducts()" />
+                <div class="category-filters" id="categoryFilters">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+
+            <!-- Products Grid -->
+            <div id="loadingProducts" class="loading">
+                <i class="fas fa-spinner spinner"></i>
+                <p>Loading products...</p>
+            </div>
+            <div class="products-grid" id="productsGrid"></div>
+            <div id="noProducts" class="no-products" style="display:none;">
+                <i class="fas fa-box-open"></i>
+                <p>No products found</p>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer" id="footer"></footer>
+
+    <script src="script.js"></script>
+    <script>
+        loadNavbar();
+        loadFooter();
+        loadProductsPage();
+        updateCartBadge();
+    </script>
+</body>
+</html>

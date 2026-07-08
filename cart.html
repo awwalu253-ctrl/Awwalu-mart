@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Awwalumart - Cart</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+    <nav class="navbar" id="navbar"></nav>
+
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">
+                <i class="fas fa-shopping-cart"></i> Your Cart
+            </h2>
+            <div id="cartContainer">
+                <!-- Rendered by JS -->
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer" id="footer"></footer>
+
+    <script src="script.js"></script>
+    <script>
+        loadNavbar();
+        loadFooter();
+        renderCart();
+        updateCartBadge();
+    </script>
+</body>
+</html>
