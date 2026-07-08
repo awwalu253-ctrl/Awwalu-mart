@@ -11,31 +11,40 @@ const API_BASE = window.location.hostname === 'localhost'
 function loadNavbar() {
     const navbar = document.getElementById('navbar');
     if (!navbar) return;
+
+    // Get total cart count (sum of quantities)
+    const cartItems = JSON.parse(localStorage.getItem('awwalumart-cart') || '[]');
+    const totalItems = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
+
     navbar.innerHTML = `
         <div class="container">
-            <a href="index.html">
-                <img src="https://res.cloudinary.com/dszfpg8hj/image/upload/v1783539694/logo_m1tvqv.png" class="logo" />
-            </a>
-            <div class="nav-links">
-                <a href="index.html" class="${window.location.pathname.includes('index') ? 'active' : ''}">Home</a>
-                <a href="products.html" class="${window.location.pathname.includes('products') ? 'active' : ''}">Products</a>
-                <a href="about.html" class="${window.location.pathname.includes('about') ? 'active' : ''}">About</a>
-                <a href="contact.html" class="${window.location.pathname.includes('contact') ? 'active' : ''}">Contact</a>
+            <div class="navbar-left">
+                <a href="index.html">
+                    <img src="/logo.png" alt="Awwalu Kitchen Vault" class="logo" />
+                </a>
+            </div>
+            <div class="navbar-right">
+                <div class="nav-links">
+                    <a href="index.html" class="${window.location.pathname.includes('index') ? 'active' : ''}">Home</a>
+                    <a href="products.html" class="${window.location.pathname.includes('products') ? 'active' : ''}">Products</a>
+                    <a href="about.html" class="${window.location.pathname.includes('about') ? 'active' : ''}">About</a>
+                    <a href="contact.html" class="${window.location.pathname.includes('contact') ? 'active' : ''}">Contact</a>
+                </div>
                 <span class="cart-icon" onclick="window.location.href='cart.html'">
                     <i class="fas fa-shopping-cart"></i>
-                    <span class="cart-badge" id="cartBadgeNav">0</span>
+                    <span class="cart-badge" id="cartBadgeNav">${totalItems}</span>
                 </span>
+                <button class="hamburger" onclick="toggleMobileMenu()">
+                    <i class="fas fa-bars"></i>
+                </button>
             </div>
-            <button class="hamburger" onclick="toggleMobileMenu()">
-                <i class="fas fa-bars"></i>
-            </button>
         </div>
         <div class="mobile-menu" id="mobileMenu">
             <a href="index.html">Home</a>
             <a href="products.html">Products</a>
             <a href="about.html">About</a>
             <a href="contact.html">Contact</a>
-            <a href="cart.html">Cart (<span id="mobileCartCount">0</span>)</a>
+            <a href="cart.html">Cart (<span id="mobileCartCount">${totalItems}</span>)</a>
         </div>
     `;
     updateCartBadge();
@@ -46,7 +55,7 @@ function loadFooter() {
     if (!footer) return;
     footer.innerHTML = `
         <div class="container">
-            <img src="https://res.cloudinary.com/dszfpg8hj/image/upload/v1783539694/logo_m1tvqv.png" />
+            <img src="/logo.png" alt="Awwalu Kitchen Vault" style="height:48px; margin-bottom:12px;" />
             <p>&copy; 2026 Awwalu Kitchen Vault. All rights reserved.</p>
             <p class="small">Premium kitchen appliances, cookware, and utensils.</p>
         </div>
@@ -58,50 +67,77 @@ function toggleMobileMenu() {
 }
 
 // ============================================
-// CART MANAGEMENT
+// CART MANAGEMENT (with quantities)
 // ============================================
-let cart = JSON.parse(localStorage.getItem('awwalumart-cart') || '[]');
+function getCart() {
+    return JSON.parse(localStorage.getItem('awwalumart-cart') || '[]');
+}
+
+function saveCart(cart) {
+    localStorage.setItem('awwalumart-cart', JSON.stringify(cart));
+    updateCartBadge();
+}
 
 function updateCartBadge() {
-    const count = cart.length;
+    const cart = getCart();
+    const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
     document.querySelectorAll('.cart-badge').forEach(el => {
-        el.textContent = count;
-        el.classList.toggle('show', count > 0);
+        el.textContent = totalItems;
+        el.classList.toggle('show', totalItems > 0);
     });
-    document.getElementById('mobileCartCount') && (document.getElementById('mobileCartCount').textContent = count);
+    const mobileCount = document.getElementById('mobileCartCount');
+    if (mobileCount) mobileCount.textContent = totalItems;
 }
 
 function addToCart(product) {
+    let cart = getCart();
     const existing = cart.find(p => p.id === product.id);
     if (existing) {
-        showToast(`${product.name} is already in your cart!`);
-        return;
+        existing.quantity = (existing.quantity || 1) + 1;
+    } else {
+        cart.push({ ...product, quantity: 1 });
     }
-    cart.push(product);
-    localStorage.setItem('awwalumart-cart', JSON.stringify(cart));
-    updateCartBadge();
+    saveCart(cart);
     showToast(`✅ ${product.name} added to cart!`);
 }
 
 function removeFromCart(productId) {
+    let cart = getCart();
+    const index = cart.findIndex(p => p.id === productId);
+    if (index !== -1) {
+        const item = cart[index];
+        if (item.quantity > 1) {
+            item.quantity--;
+        } else {
+            cart.splice(index, 1);
+        }
+        saveCart(cart);
+        if (typeof renderCart === 'function') renderCart();
+    }
+}
+
+function deleteItem(productId) {
+    let cart = getCart();
     cart = cart.filter(p => p.id !== productId);
-    localStorage.setItem('awwalumart-cart', JSON.stringify(cart));
-    updateCartBadge();
-    renderCart();
+    saveCart(cart);
+    if (typeof renderCart === 'function') renderCart();
 }
 
 function clearCart() {
-    cart = [];
-    localStorage.setItem('awwalumart-cart', JSON.stringify(cart));
-    updateCartBadge();
-    renderCart();
+    saveCart([]);
+    if (typeof renderCart === 'function') renderCart();
 }
 
 function getCartTotal() {
+    const cart = getCart();
     return cart.reduce((sum, p) => {
         const price = parseFloat(p.price.replace(/[^0-9.]/g, '') || '0');
-        return sum + price;
+        return sum + price * (p.quantity || 1);
     }, 0);
+}
+
+function getCartItems() {
+    return getCart();
 }
 
 // ============================================
@@ -200,12 +236,12 @@ function productCard(product) {
     `;
 }
 
+// ============================================
+// WHATSAPP ORDER - REDIRECT TO CHECKOUT
+// ============================================
 function orderWhatsApp(productId) {
-    const product = allProducts.find(p => p.id === productId);
-    if (!product) return;
-    const message = `Hi! I want to order: ${product.name} (${product.price})`;
-    const url = `https://wa.me/234XXXXXXXXX?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
+    // Redirect to checkout with product ID
+    window.location.href = `checkout.html?product=${productId}`;
 }
 
 function addToCartById(productId) {
@@ -244,10 +280,13 @@ async function loadProductsPage() {
 
     renderFilteredProducts();
 
-    document.getElementById('searchInput').addEventListener('input', function() {
-        window._currentSearch = this.value;
-        renderFilteredProducts();
-    });
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            window._currentSearch = this.value;
+            renderFilteredProducts();
+        });
+    }
 }
 
 function filterByCategory(category) {
@@ -265,6 +304,8 @@ function filterProducts() {
 function renderFilteredProducts() {
     const grid = document.getElementById('productsGrid');
     const noProducts = document.getElementById('noProducts');
+    if (!grid) return;
+
     const search = window._currentSearch || '';
     const category = window._currentCategory || '';
 
@@ -282,9 +323,9 @@ function renderFilteredProducts() {
 
     if (filtered.length === 0) {
         grid.innerHTML = '';
-        noProducts.style.display = 'block';
+        if (noProducts) noProducts.style.display = 'block';
     } else {
-        noProducts.style.display = 'none';
+        if (noProducts) noProducts.style.display = 'none';
         grid.innerHTML = filtered.map(p => productCard(p)).join('');
     }
 }
@@ -295,6 +336,8 @@ function renderFilteredProducts() {
 function renderCart() {
     const container = document.getElementById('cartContainer');
     if (!container) return;
+
+    const cart = getCart();
 
     if (cart.length === 0) {
         container.innerHTML = `
@@ -310,39 +353,55 @@ function renderCart() {
     }
 
     let html = '';
+    let total = 0;
+
     cart.forEach((item) => {
+        const price = parseFloat(item.price.replace(/[^0-9.]/g, '') || '0');
+        const itemTotal = price * (item.quantity || 1);
+        total += itemTotal;
+
         html += `
-            <div class="cart-item">
+            <div class="cart-item" data-id="${item.id}">
                 <div class="cart-item-info">
-                    <img src="${item.image || 'https://via.placeholder.com/64x64?text=No+Image'}" alt="${item.name}" />
+                    <img src="${item.image || 'https://via.placeholder.com/64x64?text=No+Image'}" 
+                         alt="${item.name}"
+                         onerror="this.src='https://via.placeholder.com/64x64?text=No+Image'" />
                     <div class="cart-item-details">
                         <h3>${item.name}</h3>
                         <p>${item.price}</p>
                         <small>${item.category || ''}</small>
                     </div>
                 </div>
-                <button class="cart-item-remove" onclick="removeFromCart('${item.id}')">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
+                <div class="cart-item-controls">
+                    <button class="qty-btn" onclick="updateQuantity('${item.id}', -1)">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <span class="qty-number">${item.quantity || 1}</span>
+                    <button class="qty-btn" onclick="updateQuantity('${item.id}', 1)">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <button class="cart-item-remove" onclick="deleteItem('${item.id}')">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
             </div>
         `;
     });
 
-    const total = getCartTotal();
     html += `
         <div class="cart-summary">
             <div class="cart-total">Total: ₦${total.toFixed(2)}</div>
             <div class="cart-actions">
-                <button class="btn-whatsapp" onclick="orderCartWhatsApp()">
-                    <i class="fab fa-whatsapp"></i> Order All via WhatsApp
-                </button>
+                <a href="checkout.html" class="btn-primary" style="padding:14px 32px; font-size:16px; display:inline-block; text-align:center;">
+                    <i class="fas fa-arrow-right"></i> Proceed to Checkout
+                </a>
                 <button class="btn-danger" onclick="clearCart()">
                     <i class="fas fa-trash"></i> Clear Cart
                 </button>
             </div>
         </div>
         <div style="text-align:center; margin-top: 16px;">
-            <a href="products.html" style="color:#16a34a; font-weight:500;">
+            <a href="products.html" style="color:#b8860b; font-weight:500;">
                 <i class="fas fa-arrow-left"></i> Continue Shopping
             </a>
         </div>
@@ -351,14 +410,36 @@ function renderCart() {
     container.innerHTML = html;
 }
 
-function orderCartWhatsApp() {
-    if (cart.length === 0) return;
-    const items = cart.map(p => `- ${p.name} (${p.price})`).join('\n');
-    const total = getCartTotal();
-    const message = `🛒 *Awwalu Kitchen Vault Order*\n\n${items}\n\n*Total: ₦${total.toFixed(2)}*\n\nThank you for shopping with Awwalu Kitchen Vault! 🎉`;
-    const url = `https://wa.me/234XXXXXXXXX?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
+// ============================================
+// UPDATE QUANTITY
+// ============================================
+function updateQuantity(productId, delta) {
+    let cart = getCart();
+    const item = cart.find(p => p.id === productId);
+    if (!item) return;
+
+    const newQty = (item.quantity || 1) + delta;
+    if (newQty <= 0) {
+        cart = cart.filter(p => p.id !== productId);
+    } else {
+        item.quantity = newQty;
+    }
+    saveCart(cart);
+    renderCart();
 }
+
+// ============================================
+// EXPOSE FUNCTIONS TO GLOBAL SCOPE
+// ============================================
+window.orderWhatsApp = orderWhatsApp;
+window.addToCartById = addToCartById;
+window.removeFromCart = removeFromCart;
+window.deleteItem = deleteItem;
+window.clearCart = clearCart;
+window.updateQuantity = updateQuantity;
+window.filterByCategory = filterByCategory;
+window.filterProducts = filterProducts;
+window.toggleMobileMenu = toggleMobileMenu;
 
 // ============================================
 // INIT

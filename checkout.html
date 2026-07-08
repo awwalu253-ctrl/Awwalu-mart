@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Awwalu Kitchen Vault - Checkout</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+    <nav class="navbar" id="navbar"></nav>
+
+    <section class="section checkout-section">
+        <div class="container">
+            <h2 class="section-title">
+                <i class="fas fa-clipboard-list"></i> Checkout
+            </h2>
+
+            <div class="checkout-wrapper" id="checkoutWrapper">
+                <!-- Order Summary -->
+                <div class="checkout-summary">
+                    <h3><i class="fas fa-shopping-cart"></i> Your Order</h3>
+                    <div id="checkoutItems">
+                        <p style="color:#8a8078; text-align:center; padding:20px 0;">
+                            <i class="fas fa-spinner spinner"></i> Loading...
+                        </p>
+                    </div>
+                    <div class="checkout-total">
+                        <span>Total:</span>
+                        <span id="checkoutTotal">₦0.00</span>
+                    </div>
+                </div>
+
+                <!-- Customer Info Form -->
+                <div class="checkout-form">
+                    <h3><i class="fas fa-user"></i> Personal Information</h3>
+                    <form id="checkoutForm" novalidate>
+                        <div class="form-group">
+                            <label for="fullName">Full Name <span class="required">*</span></label>
+                            <input type="text" id="fullName" placeholder="e.g. Awwalu Mohammed" required />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="phoneNumber">Phone Number <span class="required">*</span></label>
+                            <input type="tel" id="phoneNumber" placeholder="e.g. 08086111492" required />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" placeholder="e.g. awwalu@example.com" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="deliveryAddress">Delivery Address <span class="required">*</span></label>
+                            <textarea id="deliveryAddress" rows="3" placeholder="Enter your full delivery address" required></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="deliveryNotes">Delivery Notes (Optional)</label>
+                            <textarea id="deliveryNotes" rows="2" placeholder="Any special instructions?"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn-primary btn-checkout">
+                            <i class="fab fa-whatsapp"></i> Place Order via WhatsApp
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer" id="footer"></footer>
+
+    <script src="script.js"></script>
+    <script>
+        // ============================================
+        // LOAD COMPONENTS
+        // ============================================
+        loadNavbar();
+        loadFooter();
+        updateCartBadge();
+
+        // ============================================
+        // GET PRODUCT FROM URL PARAM
+        // ============================================
+        const urlParams = new URLSearchParams(window.location.search);
+        const productId = urlParams.get('product');
+
+        // ============================================
+        // GET CART DATA
+        // ============================================
+        let orderItems = [];
+        let orderTotal = 0;
+
+        const checkoutItems = document.getElementById('checkoutItems');
+        const checkoutTotal = document.getElementById('checkoutTotal');
+        const checkoutWrapper = document.getElementById('checkoutWrapper');
+
+        // ============================================
+        // FETCH PRODUCT BY ID
+        // ============================================
+        async function fetchProductById(id) {
+            try {
+                const res = await fetch(`${API_BASE}/products/${id}`);
+                if (!res.ok) throw new Error('Product not found');
+                return await res.json();
+            } catch (error) {
+                console.error('Error fetching product:', error);
+                return null;
+            }
+        }
+
+        // ============================================
+        // LOAD ORDER ITEMS
+        // ============================================
+        async function loadOrderItems() {
+            let cartItems = getCart();
+
+            if (productId) {
+                // Single product order from product page
+                const product = await fetchProductById(productId);
+                if (product) {
+                    orderItems = [{ ...product, quantity: 1 }];
+                } else {
+                    showToast('❌ Product not found. Please try again.');
+                    window.location.href = 'products.html';
+                    return;
+                }
+            } else if (cartItems.length > 0) {
+                // Use cart items
+                orderItems = cartItems;
+            } else {
+                // Empty cart
+                checkoutWrapper.innerHTML = `
+                    <div style="text-align:center; padding:60px 0; max-width:500px; margin:0 auto; grid-column: 1 / -1;">
+                        <i class="fas fa-shopping-cart" style="font-size:64px; color:#d4c9be;"></i>
+                        <p style="font-size:20px; margin-top:16px; color:#8a8078;">Your cart is empty</p>
+                        <p style="color:#b5aaa2; margin-bottom:20px;">Add some kitchen essentials and come back!</p>
+                        <a href="products.html" class="btn-primary" style="display:inline-block;">
+                            <i class="fas fa-arrow-left"></i> Browse Products
+                        </a>
+                    </div>
+                `;
+                return;
+            }
+
+            renderOrderItems();
+        }
+
+        // ============================================
+        // RENDER ORDER ITEMS
+        // ============================================
+        function renderOrderItems() {
+            if (!orderItems || orderItems.length === 0) return;
+
+            let html = '';
+            let total = 0;
+
+            orderItems.forEach((item) => {
+                const qty = item.quantity || 1;
+                const price = parseFloat(item.price.replace(/[^0-9.]/g, '') || '0');
+                const itemTotal = price * qty;
+                total += itemTotal;
+
+                html += `
+                    <div class="checkout-item">
+                        <div class="checkout-item-info">
+                            <img src="${item.image || 'https://via.placeholder.com/50x50?text=No+Image'}" 
+                                 alt="${item.name}" 
+                                 onerror="this.src='https://via.placeholder.com/50x50?text=No+Image'" />
+                            <div>
+                                <strong>${item.name}</strong>
+                                <span>${item.price}</span>
+                            </div>
+                        </div>
+                        <span class="checkout-item-qty">×${qty}</span>
+                    </div>
+                `;
+            });
+
+            checkoutItems.innerHTML = html;
+            checkoutTotal.textContent = `₦${total.toFixed(2)}`;
+            orderTotal = total;
+        }
+
+        // ============================================
+        // HANDLE FORM SUBMISSION
+        // ============================================
+        document.getElementById('checkoutForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const fullName = document.getElementById('fullName').value.trim();
+            const phoneNumber = document.getElementById('phoneNumber').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const deliveryAddress = document.getElementById('deliveryAddress').value.trim();
+            const deliveryNotes = document.getElementById('deliveryNotes').value.trim();
+
+            if (!fullName || !phoneNumber || !deliveryAddress) {
+                showToast('❌ Please fill in all required fields.');
+                return;
+            }
+            if (phoneNumber.length < 10) {
+                showToast('❌ Please enter a valid phone number.');
+                return;
+            }
+
+            // Build order message
+            let message = '🛒 *Awwalu Kitchen Vault - Order*%0A%0A';
+            message += '*Customer Information:*%0A';
+            message += `Name: ${fullName}%0A`;
+            message += `Phone: ${phoneNumber}%0A`;
+            message += `Email: ${email || 'N/A'}%0A`;
+            message += `Address: ${deliveryAddress}%0A%0A`;
+            message += '*Order Items:*%0A';
+
+            let total = 0;
+            orderItems.forEach((item) => {
+                const qty = item.quantity || 1;
+                const price = parseFloat(item.price.replace(/[^0-9.]/g, '') || '0');
+                total += price * qty;
+                message += `- ${item.name} (${item.price}) × ${qty}%0A`;
+            });
+
+            message += `%0A*Total: ₦${total.toFixed(2)}*%0A%0A`;
+
+            if (deliveryNotes) {
+                message += `*Delivery Notes:* ${deliveryNotes}%0A%0A`;
+            }
+
+            message += `Thank you for shopping with Awwalu Kitchen Vault! 🍳`;
+
+            const whatsappNumber = '2348086111492';
+            const url = `https://wa.me/${whatsappNumber}?text=${message}`;
+            window.open(url, '_blank');
+
+            // Clear cart only if it was from cart (not single product)
+            if (!productId) {
+                localStorage.removeItem('awwalumart-cart');
+                updateCartBadge();
+            }
+
+            showToast('✅ Order sent! We will confirm shortly.');
+
+            setTimeout(() => {
+                window.location.href = 'products.html';
+            }, 3000);
+        });
+
+        // ============================================
+        // INIT
+        // ============================================
+        loadOrderItems();
+        document.getElementById('fullName').focus();
+    </script>
+</body>
+</html>
