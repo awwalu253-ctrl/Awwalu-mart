@@ -14,7 +14,7 @@ function loadNavbar() {
     navbar.innerHTML = `
         <div class="container">
             <a href="index.html">
-                <img src="logo.png" alt="Awwalu Kitchen Vault" class="logo" />
+                <img src="/logo.png" alt="Awwalu Kitchen Vault" class="logo" />
             </a>
             <div class="nav-links">
                 <a href="index.html" class="${window.location.pathname.includes('index') ? 'active' : ''}">Home</a>
@@ -46,7 +46,7 @@ function loadFooter() {
     if (!footer) return;
     footer.innerHTML = `
         <div class="container">
-            <img src="logo.png" alt="Awwalu Kitchen Vault" style="height:48px; margin-bottom:12px;" />
+            <img src="/logo.png" alt="Awwalu Kitchen Vault" style="height:48px; margin-bottom:12px;" />
             <p>&copy; 2026 Awwalu Kitchen Vault. All rights reserved.</p>
             <p class="small">Premium kitchen appliances, cookware, and utensils.</p>
         </div>
