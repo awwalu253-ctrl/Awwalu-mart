@@ -8,6 +8,10 @@ from typing import List, Dict
 
 app = FastAPI()
 
+@app.get("/")
+async def root():
+    return {"message": "Hello from Vercel!"}
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
