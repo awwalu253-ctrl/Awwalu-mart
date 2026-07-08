@@ -1,0 +1,13 @@
+awwalumart-vanilla/
+├── index.html          # Homepage
+├── products.html       # Products page (with search & filters)
+├── about.html          # About page
+├── contact.html        # Contact page
+├── cart.html           # Shopping cart page
+├── styles.css          # All global styles
+├── script.js           # Shared JavaScript (cart, API calls, etc.)
+├── api/
+│   └── index.py        # Python FastAPI backend (Vercel serverless)
+├── requirements.txt    # Python dependencies
+├── vercel.json         # Vercel deployment configuration
+└── README.md           # Setup instructions
