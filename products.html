@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Awwalumart - Products</title>
+    <title>Awwalu Kitchen Vault - Products</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     <link rel="stylesheet" href="styles.css" />
 </head>
@@ -13,23 +13,27 @@
     <section class="section">
         <div class="container">
             <h2 class="section-title">
-                <i class="fas fa-box"></i> All Products
+                <i class="fas fa-box"></i> Our Kitchen Collection
             </h2>
 
             <!-- Search & Filter -->
             <div class="filter-bar">
                 <input type="text" id="searchInput" placeholder="Search products..." oninput="filterProducts()" />
                 <div class="category-filters" id="categoryFilters">
-                    <!-- Dynamically populated -->
+                    <!-- Populated by JavaScript -->
                 </div>
             </div>
 
-            <!-- Products Grid -->
+            <!-- Loading State -->
             <div id="loadingProducts" class="loading">
                 <i class="fas fa-spinner spinner"></i>
                 <p>Loading products...</p>
             </div>
+
+            <!-- Products Grid -->
             <div class="products-grid" id="productsGrid"></div>
+
+            <!-- No Products -->
             <div id="noProducts" class="no-products" style="display:none;">
                 <i class="fas fa-box-open"></i>
                 <p>No products found</p>
