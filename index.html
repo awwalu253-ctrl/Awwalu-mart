@@ -29,7 +29,7 @@
                 <i class="fas fa-th-large"></i> Shop by Category
             </h2>
             <div class="categories-grid" id="categoriesGrid">
-                <!-- Populated by JavaScript -->
+                <!-- Populated by JavaScript (loadCategories() in script.js) -->
             </div>
         </div>
     </section>
@@ -41,7 +41,7 @@
                 <i class="fas fa-star"></i> Featured Products
             </h2>
             <div class="products-grid" id="featuredGrid">
-                <!-- Populated by JavaScript -->
+                <!-- Populated by JavaScript (loadFeatured() in script.js) -->
             </div>
         </div>
     </section>
@@ -51,9 +51,10 @@
 
     <script src="script.js"></script>
     <script>
+        // Load all shared components
         loadNavbar();
         loadFooter();
-        loadCategories();
+        loadCategories();   // Make sure this function uses kitchen categories
         loadFeatured();
         updateCartBadge();
     </script>

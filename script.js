@@ -1,12 +1,12 @@
 // ============================================
-// API BASE URL (change for production)
+// API BASE URL (auto-detect)
 // ============================================
 const API_BASE = window.location.hostname === 'localhost'
     ? 'http://localhost:8000/api'
-    : '/api';  // Vercel serverless function
+    : '/api';
 
 // ============================================
-// NAVBAR & FOOTER (load dynamically)
+// NAVBAR & FOOTER
 // ============================================
 function loadNavbar() {
     const navbar = document.getElementById('navbar');
@@ -14,7 +14,7 @@ function loadNavbar() {
     navbar.innerHTML = `
         <div class="container">
             <a href="index.html">
-                <img src="https://via.placeholder.com/120x40/16a34a/white?text=AWWALUMART" alt="Awwalumart" class="logo" />
+                <img src="logo.png" alt="Awwalu Kitchen Vault" class="logo" />
             </a>
             <div class="nav-links">
                 <a href="index.html" class="${window.location.pathname.includes('index') ? 'active' : ''}">Home</a>
@@ -38,7 +38,6 @@ function loadNavbar() {
             <a href="cart.html">Cart (<span id="mobileCartCount">0</span>)</a>
         </div>
     `;
-    // Re-bind cart badge after navbar loaded
     updateCartBadge();
 }
 
@@ -47,9 +46,9 @@ function loadFooter() {
     if (!footer) return;
     footer.innerHTML = `
         <div class="container">
-            <img src="https://via.placeholder.com/120x40/16a34a/white?text=AWWALUMART" alt="Awwalumart" />
-            <p>&copy; 2026 Awwalumart. All rights reserved.</p>
-            <p class="small">Quality gadgets, kitchenware, and essentials</p>
+            <img src="logo.png" alt="Awwalu Kitchen Vault" style="height:48px; margin-bottom:12px;" />
+            <p>&copy; 2026 Awwalu Kitchen Vault. All rights reserved.</p>
+            <p class="small">Premium kitchen appliances, cookware, and utensils.</p>
         </div>
     `;
 }
@@ -88,14 +87,14 @@ function removeFromCart(productId) {
     cart = cart.filter(p => p.id !== productId);
     localStorage.setItem('awwalumart-cart', JSON.stringify(cart));
     updateCartBadge();
-    renderCart(); // if on cart page
+    renderCart();
 }
 
 function clearCart() {
     cart = [];
     localStorage.setItem('awwalumart-cart', JSON.stringify(cart));
     updateCartBadge();
-    renderCart(); // if on cart page
+    renderCart();
 }
 
 function getCartTotal() {
@@ -106,7 +105,7 @@ function getCartTotal() {
 }
 
 // ============================================
-// TOAST
+// TOAST NOTIFICATION
 // ============================================
 function showToast(message) {
     const existing = document.querySelector('.toast');
@@ -141,16 +140,16 @@ async function fetchProducts() {
 }
 
 // ============================================
-// HOMEPAGE: CATEGORIES & FEATURED
+// HOMEPAGE: CATEGORIES (KITCHEN-ONLY)
 // ============================================
-async function loadCategories() {
+function loadCategories() {
     const grid = document.getElementById('categoriesGrid');
     if (!grid) return;
     const categories = [
-        { name: 'Gadgets', icon: 'fa-mobile-alt', cls: 'gadgets' },
-        { name: 'Kitchenware', icon: 'fa-utensils', cls: 'kitchenware' },
-        { name: 'Accessories', icon: 'fa-headphones', cls: 'accessories' },
-        { name: 'Appliances', icon: 'fa-plug', cls: 'appliances' }
+        { name: 'Cookware', icon: 'fa-pot-food', cls: 'cookware' },
+        { name: 'Bakeware', icon: 'fa-bread-slice', cls: 'bakeware' },
+        { name: 'Utensils', icon: 'fa-utensils', cls: 'utensils' },
+        { name: 'Appliances', icon: 'fa-blender', cls: 'appliances' }
     ];
     grid.innerHTML = categories.map(cat => `
         <div class="category-card ${cat.cls}" onclick="window.location.href='products.html?category=${cat.name}'">
@@ -160,6 +159,9 @@ async function loadCategories() {
     `).join('');
 }
 
+// ============================================
+// HOMEPAGE: FEATURED PRODUCTS
+// ============================================
 async function loadFeatured() {
     const grid = document.getElementById('featuredGrid');
     if (!grid) return;
@@ -221,14 +223,12 @@ async function loadProductsPage() {
     const noProducts = document.getElementById('noProducts');
     const categoryFilters = document.getElementById('categoryFilters');
 
-    // Parse URL params for category filter
     const urlParams = new URLSearchParams(window.location.search);
     const categoryParam = urlParams.get('category') || '';
 
     const products = await fetchProducts();
     loading.style.display = 'none';
 
-    // Build category filters
     const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
     if (categories.length > 0) {
         categoryFilters.innerHTML = `
@@ -239,14 +239,11 @@ async function loadProductsPage() {
         `;
     }
 
-    // Store current filter state
     window._currentCategory = categoryParam;
     window._currentSearch = '';
 
-    // Render filtered products
     renderFilteredProducts();
 
-    // Search input listener
     document.getElementById('searchInput').addEventListener('input', function() {
         window._currentSearch = this.value;
         renderFilteredProducts();
@@ -255,7 +252,6 @@ async function loadProductsPage() {
 
 function filterByCategory(category) {
     window._currentCategory = category;
-    // Update active button
     document.querySelectorAll('.category-filters button').forEach(btn => {
         btn.classList.toggle('active', btn.textContent === category || (category === '' && btn.textContent === 'All'));
     });
@@ -263,7 +259,6 @@ function filterByCategory(category) {
 }
 
 function filterProducts() {
-    // Called from search input
     renderFilteredProducts();
 }
 
@@ -315,7 +310,7 @@ function renderCart() {
     }
 
     let html = '';
-    cart.forEach((item, index) => {
+    cart.forEach((item) => {
         html += `
             <div class="cart-item">
                 <div class="cart-item-info">
@@ -360,7 +355,7 @@ function orderCartWhatsApp() {
     if (cart.length === 0) return;
     const items = cart.map(p => `- ${p.name} (${p.price})`).join('\n');
     const total = getCartTotal();
-    const message = `🛒 *Awwalumart Order*\n\n${items}\n\n*Total: ₦${total.toFixed(2)}*\n\nThank you for shopping with Awwalumart! 🎉`;
+    const message = `🛒 *Awwalu Kitchen Vault Order*\n\n${items}\n\n*Total: ₦${total.toFixed(2)}*\n\nThank you for shopping with Awwalu Kitchen Vault! 🎉`;
     const url = `https://wa.me/234XXXXXXXXX?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
 }
@@ -368,7 +363,6 @@ function orderCartWhatsApp() {
 // ============================================
 // INIT
 // ============================================
-// Auto-run on page load
 document.addEventListener('DOMContentLoaded', function() {
     updateCartBadge();
 });
