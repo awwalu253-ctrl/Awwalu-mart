@@ -8,55 +8,221 @@
     <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-    <!-- Navigation -->
+    <!-- ========== NAVIGATION ========== -->
     <nav class="navbar" id="navbar"></nav>
 
-    <!-- Hero Section -->
+    <!-- ========== HERO SECTION ========== -->
     <section class="hero">
         <div class="container">
-            <h1>Welcome to Awwalu Kitchen Vault</h1>
-            <p>Premium Kitchenware · Quality Utensils</p>
-            <a href="products.html" class="btn-primary">
-                <i class="fas fa-shopping-bag"></i> Shop Now
-            </a>
+            <div class="hero-content">
+                <div class="hero-text">
+                    <span class="hero-badge">🍳 Premium Kitchenware</span>
+                    <h1>Welcome to <span>Awwalu Kitchen Vault</span></h1>
+                    <p>Discover our curated collection of premium cookware, bakeware, utensils, and appliances – designed to elevate every meal.</p>
+                    <div class="hero-buttons">
+                        <a href="products.html" class="btn-primary">
+                            <i class="fas fa-shopping-bag"></i> Shop Now
+                        </a>
+                        <a href="#featured" class="btn-secondary">
+                            <i class="fas fa-arrow-down"></i> Explore
+                        </a>
+                    </div>
+                    <div class="hero-stats">
+                        <div class="stat">
+                            <span class="stat-number">500+</span>
+                            <span class="stat-label">Happy Customers</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">100%</span>
+                            <span class="stat-label">Quality Guaranteed</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">24/7</span>
+                            <span class="stat-label">WhatsApp Support</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="hero-image">
+                    <img src="https://images.unsplash.com/photo-1556911220-bff31c812dba?w=600&h=500&fit=crop" alt="Kitchen collection" />
+                </div>
+            </div>
         </div>
     </section>
 
-    <!-- Categories -->
+    <!-- ========== BRAND STRIP ========== -->
+    <section class="brand-strip">
+        <div class="container">
+            <div class="brand-strip-items">
+                <div><i class="fas fa-truck"></i> Free Delivery</div>
+                <div><i class="fas fa-shield-alt"></i> Secure Payments</div>
+                <div><i class="fas fa-undo"></i> Easy Returns</div>
+                <div><i class="fas fa-headset"></i> 24/7 Support</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== CATEGORIES ========== -->
     <section class="section" id="categories">
         <div class="container">
             <h2 class="section-title">
                 <i class="fas fa-th-large"></i> Shop by Category
             </h2>
             <div class="categories-grid" id="categoriesGrid">
-                <!-- Populated by JavaScript (loadCategories() in script.js) -->
+                <!-- Populated by JavaScript -->
             </div>
         </div>
     </section>
 
-    <!-- Featured Products -->
+    <!-- ========== FEATURED PRODUCTS ========== -->
     <section class="section" id="featured">
         <div class="container">
             <h2 class="section-title">
                 <i class="fas fa-star"></i> Featured Products
             </h2>
             <div class="products-grid" id="featuredGrid">
-                <!-- Populated by JavaScript (loadFeatured() in script.js) -->
+                <!-- Populated by JavaScript -->
             </div>
         </div>
     </section>
 
-    <!-- Footer -->
+    <!-- ========== NEW ARRIVALS ========== -->
+    <section class="section" id="new-arrivals">
+        <div class="container">
+            <h2 class="section-title">
+                <i class="fas fa-clock"></i> New Arrivals
+            </h2>
+            <div class="products-grid" id="newArrivalsGrid">
+                <!-- Populated by JavaScript -->
+            </div>
+            <div class="text-center" style="margin-top: 32px;">
+                <a href="products.html" class="btn-primary">View All Products →</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== BENEFITS / WHY CHOOSE US ========== -->
+    <section class="section benefits-section">
+        <div class="container">
+            <h2 class="section-title">
+                <i class="fas fa-heart"></i> Why Choose Awwalu Kitchen Vault?
+            </h2>
+            <div class="benefits-grid">
+                <div class="benefit-card">
+                    <div class="benefit-icon"><i class="fas fa-gem"></i></div>
+                    <h3>Premium Quality</h3>
+                    <p>Every product is handpicked for durability, design, and performance.</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon"><i class="fas fa-tags"></i></div>
+                    <h3>Best Prices</h3>
+                    <p>Direct sourcing means you get the best value for your money.</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon"><i class="fas fa-shipping-fast"></i></div>
+                    <h3>Fast Delivery</h3>
+                    <p>We deliver across Nigeria with speed and care.</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon"><i class="fas fa-headset"></i></div>
+                    <h3>24/7 Support</h3>
+                    <p>Reach us anytime on WhatsApp – we're here to help.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== KITCHEN BANNER ========== -->
+    <section class="kitchen-banner">
+        <div class="container">
+            <div class="banner-content">
+                <div class="banner-text">
+                    <span>🍳 Upgrade Your Kitchen</span>
+                    <h2>Get 10% Off Your First Order</h2>
+                    <p>Sign up for our newsletter and get exclusive discounts, recipes, and kitchen tips.</p>
+                    <form class="banner-form" id="newsletterForm">
+                        <input type="email" placeholder="Enter your email" required />
+                        <button type="submit"><i class="fas fa-arrow-right"></i> Subscribe</button>
+                    </form>
+                </div>
+                <div class="banner-image">
+                    <img src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=300&fit=crop" alt="Kitchen" />
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== TESTIMONIALS ========== -->
+    <section class="section testimonials-section">
+        <div class="container">
+            <h2 class="section-title">
+                <i class="fas fa-comment-dots"></i> What Our Customers Say
+            </h2>
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <div class="stars">⭐⭐⭐⭐⭐</div>
+                    <p>"The cookware set is amazing! Quality is top-notch and delivery was super fast."</p>
+                    <div class="customer">
+                        <strong>— Amina</strong>
+                        <span>Lagos</span>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="stars">⭐⭐⭐⭐⭐</div>
+                    <p>"I love my new blender! It's powerful and looks great on my counter."</p>
+                    <div class="customer">
+                        <strong>— Tunde</strong>
+                        <span>Abuja</span>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="stars">⭐⭐⭐⭐⭐</div>
+                    <p>"Finally found a store that sells quality kitchen utensils at affordable prices."</p>
+                    <div class="customer">
+                        <strong>— Zainab</strong>
+                        <span>Kano</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== FOOTER ========== -->
     <footer class="footer" id="footer"></footer>
 
+    <!-- ========== JAVASCRIPT ========== -->
     <script src="script.js"></script>
     <script>
-        // Load all shared components
+        // Load components
         loadNavbar();
         loadFooter();
-        loadCategories();   // Make sure this function uses kitchen categories
+        loadCategories();
         loadFeatured();
+
+        // Load "New Arrivals" – same as featured but can be filtered differently
+        // For now, we just show the first 4 products from the API
+        (async function loadNewArrivals() {
+            const grid = document.getElementById('newArrivalsGrid');
+            if (!grid) return;
+            const products = await fetchProducts();
+            const arrivals = products.slice(0, 4);
+            if (arrivals.length === 0) {
+                grid.innerHTML = '<p class="loading">No new arrivals</p>';
+                return;
+            }
+            grid.innerHTML = arrivals.map(p => productCard(p)).join('');
+        })();
+
         updateCartBadge();
+
+        // Newsletter form
+        document.getElementById('newsletterForm')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const input = this.querySelector('input');
+            if (input.value) {
+                showToast(`✅ Thanks for subscribing, ${input.value}!`);
+                input.value = '';
+            }
+        });
     </script>
 </body>
 </html>
