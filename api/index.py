@@ -1,6 +1,6 @@
 import os
 import json
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import gspread
 from google.oauth2.service_account import Credentials
@@ -17,7 +17,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ---------- Helper: Fetch products from Google Sheets ----------
+# ---------- Helper: Fetch Products from Google Sheets ----------
 def get_products() -> List[Dict]:
     try:
         scope = [
@@ -66,7 +66,10 @@ def get_products() -> List[Dict]:
 @app.get("/")
 async def root():
     """Welcome message for the API root."""
-    return {"message": "Welcome to Awwalumart API", "endpoints": ["/api/products", "/api/test", "/api/debug"]}
+    return {
+        "message": "Welcome to Awwalu Kitchen Vault API",
+        "endpoints": ["/api/products", "/api/products/featured", "/api/products/{id}", "/api/test", "/api/debug"]
+    }
 
 @app.get("/api/test")
 async def test_connection():
@@ -84,9 +87,24 @@ async def get_featured_products():
     all_products = get_products()
     return [p for p in all_products if p.get("featured", False)]
 
+@app.get("/api/products/{product_id}")
+async def get_product_by_id(product_id: str):
+    """
+    Returns a single product by its ID.
+    Example: /api/products/prod_001
+    """
+    all_products = get_products()
+    for product in all_products:
+        if product["id"] == product_id:
+            return product
+    raise HTTPException(status_code=404, detail="Product not found")
+
 @app.get("/api/debug")
 async def debug():
-    """Debug endpoint to check environment and sheet connectivity."""
+    """
+    Debug endpoint to check environment and sheet connectivity.
+    Useful for troubleshooting.
+    """
     result = {
         "has_credentials_env": bool(os.getenv("GOOGLE_CREDENTIALS")),
         "sheet_id": "1ZcHPR7V30AXlKAeaVAzaVn-F3Hk2hNSh8LicIBfloyo",
@@ -99,3 +117,8 @@ async def debug():
     except Exception as e:
         result["error"] = str(e)
     return result
+
+# (Optional) For local development using `uvicorn api.index:app --reload`
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
