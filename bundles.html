@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Awwalu Kitchen Vault - Bundles</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+    <nav class="navbar" id="navbar"></nav>
+
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">
+                <i class="fas fa-gift"></i> Kitchen Bundles
+            </h2>
+            <p style="text-align:center; color:#8a8078; margin-bottom:40px; font-size:16px;">
+                Save more with our curated kitchen bundles
+            </p>
+
+            <!-- Bundles Grid -->
+            <div id="bundlesGrid" class="bundles-grid">
+                <div class="loading">
+                    <i class="fas fa-spinner spinner"></i>
+                    <p>Loading bundles...</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bundle Detail Modal -->
+    <div class="modal-overlay" id="bundleModal" style="display:none;">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeBundleModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            <div id="bundleDetail">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer" id="footer"></footer>
+
+    <script src="script.js"></script>
+    <script>
+        loadNavbar();
+        loadFooter();
+        loadBundles();
+        updateCartBadge();
+
+        // ============================================
+        // LOAD BUNDLES
+        // ============================================
+        async function loadBundles() {
+            const grid = document.getElementById('bundlesGrid');
+            try {
+                const res = await fetch(`${API_BASE}/bundles`);
+                const bundles = await res.json();
+
+                if (bundles.length === 0) {
+                    grid.innerHTML = `
+                        <div class="no-products" style="grid-column:1/-1;">
+                            <i class="fas fa-gift"></i>
+                            <p>No bundles available yet.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                grid.innerHTML = bundles.map(bundle => `
+                    <div class="bundle-card" onclick="openBundleModal('${bundle.id}')">
+                        <img src="${bundle.image || 'https://via.placeholder.com/400x300?text=Bundle'}" 
+                             alt="${bundle.name}" 
+                             onerror="this.src='https://via.placeholder.com/400x300?text=Bundle'" />
+                        <div class="bundle-body">
+                            <span class="bundle-badge">${bundle.discount}% OFF</span>
+                            <h3>${bundle.name}</h3>
+                            <p>${bundle.description}</p>
+                            <span class="bundle-count">${bundle.product_ids.length} items included</span>
+                            <button class="btn-primary btn-view-bundle">
+                                <i class="fas fa-eye"></i> View Bundle
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error loading bundles:', error);
+                grid.innerHTML = `
+                    <div class="no-products" style="grid-column:1/-1;">
+                        <i class="fas fa-exclamation-circle" style="color:#ef4444;"></i>
+                        <p>Failed to load bundles. Please try again.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // ============================================
+        // OPEN BUNDLE DETAIL MODAL
+        // ============================================
+        let selectedBundle = null;
+
+        async function openBundleModal(bundleId) {
+            const modal = document.getElementById('bundleModal');
+            const detail = document.getElementById('bundleDetail');
+
+            try {
+                const res = await fetch(`${API_BASE}/bundles/${bundleId}`);
+                const bundle = await res.json();
+
+                if (bundle.error) {
+                    showToast('❌ Bundle not found');
+                    return;
+                }
+
+                selectedBundle = bundle;
+
+                // Render bundle details
+                detail.innerHTML = `
+                    <div class="bundle-detail-header">
+                        <img src="${bundle.image || 'https://via.placeholder.com/600x400?text=Bundle'}" 
+                             alt="${bundle.name}"
+                             onerror="this.src='https://via.placeholder.com/600x400?text=Bundle'" />
+                        <div class="bundle-detail-info">
+                            <span class="bundle-badge">${bundle.discount}% OFF</span>
+                            <h2>${bundle.name}</h2>
+                            <p>${bundle.description}</p>
+                            <p class="bundle-savings">Save ${bundle.discount}% when you buy this bundle!</p>
+                        </div>
+                    </div>
+                    <div class="bundle-products">
+                        <h3>Products in this bundle</h3>
+                        <div class="bundle-products-grid">
+                            ${bundle.products.map(product => `
+                                <div class="bundle-product-item" data-id="${product.id}">
+                                    <img src="${product.image || 'https://via.placeholder.com/100x100?text=No+Image'}" 
+                                         alt="${product.name}"
+                                         onerror="this.src='https://via.placeholder.com/100x100?text=No+Image'" />
+                                    <div class="bundle-product-info">
+                                        <h4>${product.name}</h4>
+                                        <span class="product-price">${product.price}</span>
+                                    </div>
+                                    <div class="bundle-product-actions">
+                                        <button class="qty-btn" onclick="updateBundleProduct('${product.id}', -1)">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                        <span class="qty-number" id="bundle-qty-${product.id}">1</span>
+                                        <button class="qty-btn" onclick="updateBundleProduct('${product.id}', 1)">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                        <button class="bundle-remove-btn" onclick="toggleBundleProduct('${product.id}')">
+                                            <i class="fas fa-times" id="bundle-remove-${product.id}"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="bundle-total">
+                            <span>Bundle Total:</span>
+                            <span id="bundleTotalPrice">₦0.00</span>
+                        </div>
+                        <button class="btn-primary btn-add-bundle" onclick="addBundleToCart()">
+                            <i class="fas fa-shopping-cart"></i> Add Bundle to Cart
+                        </button>
+                    </div>
+                `;
+
+                // Initialize selected items
+                selectedBundle.selectedProducts = bundle.products.map(p => ({ ...p, qty: 1, selected: true }));
+                updateBundleTotal();
+
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+
+            } catch (error) {
+                console.error('Error loading bundle detail:', error);
+                showToast('❌ Failed to load bundle details');
+            }
+        }
+
+        // ============================================
+        // CLOSE BUNDLE MODAL
+        // ============================================
+        function closeBundleModal() {
+            document.getElementById('bundleModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        // ============================================
+        // TOGGLE PRODUCT IN BUNDLE (Remove/Add)
+        // ============================================
+        function toggleBundleProduct(productId) {
+            const item = selectedBundle.selectedProducts.find(p => p.id === productId);
+            if (item) {
+                item.selected = !item.selected;
+                const removeBtn = document.getElementById(`bundle-remove-${productId}`);
+                const qtySpan = document.getElementById(`bundle-qty-${productId}`);
+                if (item.selected) {
+                    removeBtn.style.color = '#c0392b';
+                    qtySpan.style.display = 'inline';
+                } else {
+                    removeBtn.style.color = '#8a8078';
+                    qtySpan.style.display = 'none';
+                }
+                updateBundleTotal();
+            }
+        }
+
+        // ============================================
+        // UPDATE PRODUCT QUANTITY IN BUNDLE
+        // ============================================
+        function updateBundleProduct(productId, delta) {
+            const item = selectedBundle.selectedProducts.find(p => p.id === productId);
+            if (!item || !item.selected) return;
+            const newQty = (item.qty || 1) + delta;
+            if (newQty < 1) return;
+            item.qty = newQty;
+            document.getElementById(`bundle-qty-${productId}`).textContent = newQty;
+            updateBundleTotal();
+        }
+
+        // ============================================
+        // UPDATE BUNDLE TOTAL
+        // ============================================
+        function updateBundleTotal() {
+            let total = 0;
+            selectedBundle.selectedProducts.forEach(item => {
+                if (item.selected) {
+                    const price = parseFloat(item.price.replace(/[^0-9.]/g, '') || '0');
+                    total += price * (item.qty || 1);
+                }
+            });
+            // Apply discount
+            const discount = selectedBundle.discount || 0;
+            const finalTotal = total * (1 - discount / 100);
+            document.getElementById('bundleTotalPrice').textContent = `₦${finalTotal.toFixed(2)}`;
+        }
+
+        // ============================================
+        // ADD BUNDLE TO CART
+        // ============================================
+        function addBundleToCart() {
+            let cart = JSON.parse(localStorage.getItem('awwalumart-cart') || '[]');
+
+            selectedBundle.selectedProducts.forEach(item => {
+                if (item.selected) {
+                    const existing = cart.find(p => p.id === item.id);
+                    if (existing) {
+                        existing.quantity = (existing.quantity || 0) + (item.qty || 1);
+                    } else {
+                        cart.push({ ...item, quantity: item.qty || 1 });
+                    }
+                }
+            });
+
+            localStorage.setItem('awwalumart-cart', JSON.stringify(cart));
+            updateCartBadge();
+            showToast(`✅ Bundle "${selectedBundle.name}" added to cart!`);
+
+            // Close modal after a moment
+            setTimeout(closeBundleModal, 1500);
+        }
+
+        // Click outside modal to close
+        document.getElementById('bundleModal').addEventListener('click', function(e) {
+            if (e.target === this) closeBundleModal();
+        });
+
+        // Escape key to close
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeBundleModal();
+        });
+    </script>
+</body>
+</html>

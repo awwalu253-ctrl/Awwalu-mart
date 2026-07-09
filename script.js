@@ -27,6 +27,7 @@ function loadNavbar() {
                 <div class="nav-links">
                     <a href="index.html" class="${window.location.pathname.includes('index') ? 'active' : ''}">Home</a>
                     <a href="products.html" class="${window.location.pathname.includes('products') ? 'active' : ''}">Products</a>
+                    <a href="bundles.html" class="${window.location.pathname.includes('bundles') ? 'active' : ''}">Bundles</a>
                     <a href="about.html" class="${window.location.pathname.includes('about') ? 'active' : ''}">About</a>
                     <a href="contact.html" class="${window.location.pathname.includes('contact') ? 'active' : ''}">Contact</a>
                 </div>
@@ -42,6 +43,7 @@ function loadNavbar() {
         <div class="mobile-menu" id="mobileMenu">
             <a href="index.html">Home</a>
             <a href="products.html">Products</a>
+            <a href="bundles.html">Bundles</a>
             <a href="about.html">About</a>
             <a href="contact.html">Contact</a>
             <a href="cart.html">Cart (<span id="mobileCartCount">${totalItems}</span>)</a>

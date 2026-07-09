@@ -118,6 +118,79 @@ async def debug():
         result["error"] = str(e)
     return result
 
+# ============================================
+# BUNDLES
+# ============================================
+
+def get_bundles() -> List[Dict]:
+    """Fetch bundles from Google Sheets."""
+    try:
+        scope = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"
+        ]
+
+        if os.getenv("GOOGLE_CREDENTIALS"):
+            creds_dict = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
+            creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
+        else:
+            cred_path = os.path.join(os.path.dirname(__file__), "credentials.json")
+            creds = Credentials.from_service_account_file(cred_path, scopes=scope)
+
+        client = gspread.authorize(creds)
+        SHEET_ID = "YOUR_GOOGLE_SHEET_ID"
+
+        # Open the "Bundles" sheet
+        try:
+            sheet = client.open_by_key(SHEET_ID).worksheet("Bundles")
+        except gspread.WorksheetNotFound:
+            # If sheet doesn't exist, try the first sheet
+            sheet = client.open_by_key(SHEET_ID).sheet1
+
+        rows = sheet.get_all_records()
+
+        bundles = []
+        for row in rows:
+            if row.get("Bundle Name", "").strip():
+                # Parse product IDs (comma-separated)
+                product_ids = [p.strip() for p in str(row.get("Product IDs", "")).split(",") if p.strip()]
+                bundles.append({
+                    "id": str(row.get("Bundle ID", "")),
+                    "name": str(row.get("Bundle Name", "")),
+                    "description": str(row.get("Description", "")),
+                    "discount": float(str(row.get("Discount %", "0")).replace("%", "").strip() or 0),
+                    "product_ids": product_ids,
+                    "image": str(row.get("Image URL", ""))
+                })
+        return bundles
+
+    except Exception as e:
+        print(f"ERROR in get_bundles: {e}")
+        return []
+
+@app.get("/api/bundles")
+async def get_all_bundles():
+    """Returns all bundles."""
+    return get_bundles()
+
+@app.get("/api/bundles/{bundle_id}")
+async def get_bundle_by_id(bundle_id: str):
+    """Returns a single bundle by its ID."""
+    all_bundles = get_bundles()
+    for bundle in all_bundles:
+        if bundle["id"] == bundle_id:
+            # Get full product details for each product ID
+            all_products = get_products()
+            products = []
+            for pid in bundle["product_ids"]:
+                for product in all_products:
+                    if product["id"] == pid:
+                        products.append(product)
+                        break
+            bundle["products"] = products
+            return bundle
+    raise HTTPException(status_code=404, detail="Bundle not found")
+
 # (Optional) For local development using `uvicorn api.index:app --reload`
 if __name__ == "__main__":
     import uvicorn

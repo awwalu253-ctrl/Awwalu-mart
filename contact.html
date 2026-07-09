@@ -8,42 +8,58 @@
     <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+    <!-- Navigation -->
     <nav class="navbar" id="navbar"></nav>
 
+    <!-- Contact Section -->
     <section class="section">
         <div class="container">
             <h2 class="section-title">
                 <i class="fas fa-envelope"></i> Get in Touch
             </h2>
+            <p style="text-align:center; color:#8a8078; margin-bottom:40px; font-size:16px;">
+                We'd love to hear from you! Reach out to us anytime.
+            </p>
+
             <div class="contact-grid">
+                <!-- WhatsApp Card -->
                 <div class="contact-card">
-                    <i class="fab fa-whatsapp text-3xl text-green"></i>
+                    <div style="width:64px; height:64px; background:#d1fae5; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 12px;">
+                        <i class="fab fa-whatsapp text-3xl" style="color:#25D366; font-size:32px;"></i>
+                    </div>
                     <h3>WhatsApp</h3>
                     <p>Chat with us instantly</p>
-                    <a href="https://wa.me/234XXXXXXXXX" class="btn-whatsapp" style="display:inline-block; margin-top:12px;">
+                    <a href="https://wa.me/2348086111492" class="btn-whatsapp" style="display:inline-block; margin-top:12px; padding:10px 28px; background:#25D366; color:white; border-radius:9999px; text-decoration:none; font-weight:600; transition:background 0.25s ease;">
                         <i class="fab fa-whatsapp"></i> Click to Chat
                     </a>
                 </div>
 
+                <!-- Email Card -->
                 <div class="contact-card">
-                    <i class="fas fa-envelope text-3xl text-blue"></i>
+                    <div style="width:64px; height:64px; background:#dbeafe; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 12px;">
+                        <i class="fas fa-envelope text-3xl" style="color:#3b82f6; font-size:32px;"></i>
+                    </div>
                     <h3>Email</h3>
                     <p>Send us a message</p>
-                    <a href="mailto:info@awwalukitchen.com" class="btn-primary" style="display:inline-block; margin-top:12px;">
+                    <a href="mailto:info@awwalukitchen.com" class="btn-primary" style="display:inline-block; margin-top:12px; padding:10px 28px;">
                         <i class="fas fa-envelope"></i> Send Email
                     </a>
                 </div>
 
+                <!-- Location Card -->
                 <div class="contact-card">
-                    <i class="fas fa-map-marker-alt text-3xl text-gray"></i>
+                    <div style="width:64px; height:64px; background:#f3f4f6; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 12px;">
+                        <i class="fas fa-map-marker-alt text-3xl" style="color:#6b7280; font-size:32px;"></i>
+                    </div>
                     <h3>Location</h3>
                     <p>Nigeria</p>
-                    <p class="small">We deliver across the country!</p>
+                    <p class="small" style="color:#9ca3af; font-size:14px; margin-top:4px;">We deliver across the country!</p>
                 </div>
             </div>
         </div>
     </section>
 
+    <!-- Footer -->
     <footer class="footer" id="footer"></footer>
 
     <script src="script.js"></script>
