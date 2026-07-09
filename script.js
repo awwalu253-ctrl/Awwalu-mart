@@ -12,15 +12,17 @@ function loadNavbar() {
     const navbar = document.getElementById('navbar');
     if (!navbar) return;
 
-    // Get total cart count (sum of quantities)
     const cartItems = JSON.parse(localStorage.getItem('awwalumart-cart') || '[]');
     const totalItems = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
+
+    // === CHANGE THIS TO YOUR CLOUDINARY URL ===
+    const logoUrl = 'https://res.cloudinary.com/your-cloud-name/image/upload/your-logo.png';
 
     navbar.innerHTML = `
         <div class="container">
             <div class="navbar-left">
                 <a href="index.html">
-                    <img src="https://res.cloudinary.com/dszfpg8hj/image/upload/v1783539694/logo_m1tvqv.png" alt="Awwalu Kitchen Vault" class="logo" />
+                    <img src="${logoUrl}" alt="Awwalu Kitchen Vault" class="logo" />
                 </a>
             </div>
             <div class="navbar-right">
@@ -55,9 +57,14 @@ function loadNavbar() {
 function loadFooter() {
     const footer = document.getElementById('footer');
     if (!footer) return;
+    
+    // === CHANGE THIS TO YOUR CLOUDINARY URL ===
+    const logoUrl = 'https://res.cloudinary.com/your-cloud-name/image/upload/your-logo.png';
+    
     footer.innerHTML = `
         <div class="container">
-            <img src="https://res.cloudinary.com/dszfpg8hj/image/upload/v1783539694/logo_m1tvqv.png" alt="Awwalu Kitchen Vault" class="logo" />            <p>&copy; 2026 Awwalu Kitchen Vault. All rights reserved.</p>
+            <img src="${logoUrl}" alt="Awwalu Kitchen Vault" style="height:48px; margin-bottom:12px;" />
+            <p>&copy; 2026 Awwalu Kitchen Vault. All rights reserved.</p>
             <p class="small">Premium kitchen appliances, cookware, and utensils.</p>
         </div>
     `;
@@ -135,10 +142,6 @@ function getCartTotal() {
         const price = parseFloat(p.price.replace(/[^0-9.]/g, '') || '0');
         return sum + price * (p.quantity || 1);
     }, 0);
-}
-
-function getCartItems() {
-    return getCart();
 }
 
 // ============================================
@@ -241,7 +244,6 @@ function productCard(product) {
 // WHATSAPP ORDER - REDIRECT TO CHECKOUT
 // ============================================
 function orderWhatsApp(productId) {
-    // Redirect to checkout with product ID
     window.location.href = `checkout.html?product=${productId}`;
 }
 
@@ -428,6 +430,50 @@ function updateQuantity(productId, delta) {
     saveCart(cart);
     renderCart();
 }
+
+// ============================================
+// PROMO OVERLAY (with "Don't show again")
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    const overlay = document.getElementById('promoOverlay');
+    const closeBtn = document.getElementById('promoClose');
+    const skipLink = document.getElementById('promoSkipLink');
+    const dontShowCheckbox = document.getElementById('dontShowAgain');
+
+    // Check localStorage for permanent hide preference
+    if (localStorage.getItem('promoHidden') === 'true') {
+        overlay.classList.add('hidden');
+        return; // Exit early, don't show overlay
+    }
+
+    // Show overlay (in case it was hidden)
+    overlay.classList.remove('hidden');
+
+    function dismissPromo() {
+        overlay.classList.add('hidden');
+        
+        // If checkbox is checked, save to localStorage
+        if (dontShowCheckbox && dontShowCheckbox.checked) {
+            localStorage.setItem('promoHidden', 'true');
+        }
+    }
+
+    // Close button
+    closeBtn.addEventListener('click', dismissPromo);
+
+    // "Continue browsing" link
+    skipLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        dismissPromo();
+    });
+
+    // Click on backdrop (outside content) also closes
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+            dismissPromo();
+        }
+    });
+});
 
 // ============================================
 // EXPOSE FUNCTIONS TO GLOBAL SCOPE

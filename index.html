@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,7 +8,44 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body>
+
+    <!-- ========== FULL-SCREEN PROMO OVERLAY ========== -->
+    <div id="promoOverlay" class="promo-overlay">
+        <div class="promo-overlay-content">
+            <!-- Close button -->
+            <button class="promo-close" id="promoClose" aria-label="Close promotion">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <!-- Main content -->
+            <div class="promo-overlay-inner">
+                <span class="promo-badge">🔥 Limited Time Offer</span>
+                <h1>Save Big with Our Bundles</h1>
+                <p>
+                    Curated kitchen sets at unbeatable prices.<br />
+                    Get up to <strong>20% off</strong> when you buy a bundle!
+                </p>
+                <a href="bundles.html" class="btn-promo-large">
+                    <i class="fas fa-gift"></i> Explore Bundles
+                </a>
+
+                <!-- Don't show again checkbox -->
+                <div class="promo-dont-show">
+                    <label>
+                        <input type="checkbox" id="dontShowAgain" />
+                        <span>Don't show this again</span>
+                    </label>
+                </div>
+
+                <p class="promo-skip">
+                    Or just <a href="#" id="promoSkipLink">continue browsing</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
     <!-- ========== NAVIGATION ========== -->
     <nav class="navbar" id="navbar"></nav>
 
@@ -16,9 +54,10 @@
         <div class="container">
             <div class="hero-content">
                 <div class="hero-text">
-                    <span class="hero-badge"> Premium Kitchenware</span>
+                    <span class="hero-badge">🍳 Premium Kitchenware</span>
                     <h1>Welcome to <span>Awwalu Kitchen Vault</span></h1>
-                    <p>Discover our curated collection of premium cookware, bakeware, utensils, and appliances – designed to elevate every meal.</p>
+                    <p>Discover our curated collection of premium cookware, bakeware, utensils, and appliances –
+                        designed to elevate every meal.</p>
                     <div class="hero-buttons">
                         <a href="products.html" class="btn-primary">
                             <i class="fas fa-shopping-bag"></i> Shop Now
@@ -43,7 +82,8 @@
                     </div>
                 </div>
                 <div class="hero-image">
-                    <img src="https://images.unsplash.com/photo-1556911220-bff31c812dba?w=600&h=500&fit=crop" alt="Kitchen collection" />
+                    <img src="https://images.unsplash.com/photo-1556911220-bff31c812dba?w=600&h=500&fit=crop"
+                        alt="Kitchen collection" />
                 </div>
             </div>
         </div>
@@ -145,7 +185,8 @@
                     </form>
                 </div>
                 <div class="banner-image">
-                    <img src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=300&fit=crop" alt="Kitchen" />
+                    <img src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=300&fit=crop"
+                        alt="Kitchen" />
                 </div>
             </div>
         </div>
@@ -198,8 +239,7 @@
         loadCategories();
         loadFeatured();
 
-        // Load "New Arrivals" – same as featured but can be filtered differently
-        // For now, we just show the first 4 products from the API
+        // Load "New Arrivals"
         (async function loadNewArrivals() {
             const grid = document.getElementById('newArrivalsGrid');
             if (!grid) return;
@@ -215,7 +255,7 @@
         updateCartBadge();
 
         // Newsletter form
-        document.getElementById('newsletterForm')?.addEventListener('submit', function(e) {
+        document.getElementById('newsletterForm')?.addEventListener('submit', function (e) {
             e.preventDefault();
             const input = this.querySelector('input');
             if (input.value) {
@@ -223,6 +263,39 @@
                 input.value = '';
             }
         });
+
+        // ============================================
+        // PROMO OVERLAY
+        // ============================================
+        document.addEventListener('DOMContentLoaded', function () {
+            const overlay = document.getElementById('promoOverlay');
+            const closeBtn = document.getElementById('promoClose');
+            const skipLink = document.getElementById('promoSkipLink');
+
+            // ALWAYS show the overlay on page load
+            overlay.classList.remove('hidden');
+
+            function dismissPromo() {
+                overlay.classList.add('hidden');
+            }
+
+            // Close button
+            closeBtn.addEventListener('click', dismissPromo);
+
+            // "Continue browsing" link
+            skipLink.addEventListener('click', function (e) {
+                e.preventDefault();
+                dismissPromo();
+            });
+
+            // Click on backdrop (outside content) also closes
+            overlay.addEventListener('click', function (e) {
+                if (e.target === overlay) {
+                    dismissPromo();
+                }
+            });
+        });
     </script>
 </body>
+
 </html>
