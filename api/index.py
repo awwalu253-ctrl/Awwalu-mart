@@ -1,8 +1,7 @@
 import os
 import json
-import uuid
-import hmac
-from datetime import datetime
+import jwt
+from datetime import datetime, timedelta
 from typing import List, Dict
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,14 +19,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ---------- Configuration ----------
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
-SHEET_ID = "1ZcHPR7V30AXlKAeaVAzaVn-F3Hk2hNSh8LicIBfloyo"
-
-# In-memory session store (for demo)
-sessions = {}
+# ---------- JWT Configuration ----------
+JWT_SECRET = os.getenv("ADMIN_PASSWORD", "admin123")
+JWT_ALGORITHM = "HS256"
+TOKEN_EXPIRY_HOURS = 24
 
 # ---------- Google Sheets Helpers ----------
+SHEET_ID = "1ZcHPR7V30AXlKAeaVAzaVn-F3Hk2hNSh8LicIBfloyo"
+
 def get_gspread_client():
     scope = [
         "https://www.googleapis.com/auth/spreadsheets",
@@ -65,6 +64,23 @@ def update_config(setting, value):
             return
     sheet.append_row([setting, value])
 
+# ---------- JWT Functions ----------
+def create_token(username: str) -> str:
+    payload = {
+        "username": username,
+        "exp": datetime.utcnow() + timedelta(hours=TOKEN_EXPIRY_HOURS)
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+def verify_token(token: str) -> bool:
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        return payload.get("username") == "admin"
+    except jwt.ExpiredSignatureError:
+        return False
+    except jwt.InvalidTokenError:
+        return False
+
 # ---------- Products ----------
 def get_products() -> List[Dict]:
     try:
@@ -82,7 +98,8 @@ def get_products() -> List[Dict]:
                     "image": str(row.get("Image URL", "")),
                     "category": str(row.get("Category", "")),
                     "description": str(row.get("Description", "")),
-                    "featured": str(row.get("Featured", "")).lower() in ["yes", "true"]
+                    "featured": str(row.get("Featured", "")).lower() in ["yes", "true"],
+                    "stock": str(row.get("Stock", "Yes"))
                 })
         return products
     except Exception as e:
@@ -114,30 +131,23 @@ def get_bundles() -> List[Dict]:
         return []
 
 # ---------- Admin Authentication ----------
-def verify_session(token: str):
-    return sessions.get(token)
-
 @app.post("/api/admin/login")
 async def admin_login(request: Request):
     data = await request.json()
     username = data.get("username")
     password = data.get("password")
-    if username == "admin" and hmac.compare_digest(password, ADMIN_PASSWORD):
-        token = str(uuid.uuid4())
-        sessions[token] = {"username": "admin", "created_at": datetime.utcnow()}
+    if username == "admin" and password == ADMIN_PASSWORD:
+        token = create_token(username)
         return {"token": token}
     raise HTTPException(status_code=401, detail="Invalid credentials")
 
 @app.post("/api/admin/logout")
-async def admin_logout(request: Request):
-    token = request.headers.get("Authorization")
-    if token and token.startswith("Bearer "):
-        token = token[7:]
-        sessions.pop(token, None)
+async def admin_logout():
+    # Client-side cleanup – just return success
     return {"message": "Logged out"}
 
 def admin_required(auth: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
-    if not verify_session(auth.credentials):
+    if not verify_token(auth.credentials):
         raise HTTPException(status_code=401, detail="Unauthorized")
     return True
 
@@ -234,6 +244,54 @@ async def log_order(data: dict, _=Depends(admin_required)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# ---------- Admin Product Management ----------
+@app.post("/api/admin/products")
+async def create_product(data: dict, _=Depends(admin_required)):
+    try:
+        sheet = get_gspread_client().open_by_key(SHEET_ID).sheet1
+        sheet.append_row([
+            data.get("id", ""),
+            data.get("name", ""),
+            data.get("price", ""),
+            data.get("image", ""),
+            data.get("category", ""),
+            data.get("description", ""),
+            data.get("stock", "Yes"),
+            data.get("featured", "No")
+        ])
+        return {"message": "Product created"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/admin/products/{product_id}")
+async def update_product(product_id: str, data: dict, _=Depends(admin_required)):
+    try:
+        sheet = get_gspread_client().open_by_key(SHEET_ID).sheet1
+        records = sheet.get_all_records()
+        col_map = {"name": 2, "price": 3, "image": 4, "category": 5, "description": 6, "stock": 7, "featured": 8}
+        for i, row in enumerate(records, start=2):
+            if row.get("Product ID") == product_id:
+                for key, value in data.items():
+                    if key in col_map:
+                        sheet.update_cell(i, col_map[key], value)
+                return {"message": "Product updated"}
+        raise HTTPException(status_code=404, detail="Product not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/admin/products/{product_id}")
+async def delete_product(product_id: str, _=Depends(admin_required)):
+    try:
+        sheet = get_gspread_client().open_by_key(SHEET_ID).sheet1
+        records = sheet.get_all_records()
+        for i, row in enumerate(records, start=2):
+            if row.get("Product ID") == product_id:
+                sheet.delete_rows(i)
+                return {"message": "Product deleted"}
+        raise HTTPException(status_code=404, detail="Product not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # ---------- Public API Routes ----------
 @app.get("/")
 async def root():
@@ -308,58 +366,6 @@ async def debug():
         }
     except Exception as e:
         return {"error": str(e)}
-
-# ---------- Admin Product Management ----------
-@app.post("/api/admin/products")
-async def create_product(data: dict, _=Depends(admin_required)):
-    try:
-        sheet = get_gspread_client().open_by_key(SHEET_ID).sheet1
-        sheet.append_row([
-            data.get("id", ""),
-            data.get("name", ""),
-            data.get("price", ""),
-            data.get("image", ""),
-            data.get("category", ""),
-            data.get("description", ""),
-            data.get("stock", "Yes"),
-            data.get("featured", "No")
-        ])
-        return {"message": "Product created successfully"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.put("/api/admin/products/{product_id}")
-async def update_product(product_id: str, data: dict, _=Depends(admin_required)):
-    try:
-        sheet = get_gspread_client().open_by_key(SHEET_ID).sheet1
-        records = sheet.get_all_records()
-        for i, row in enumerate(records, start=2):
-            if row.get("Product ID") == product_id:
-                # Update fields
-                if "name" in data: sheet.update_cell(i, 2, data["name"])
-                if "price" in data: sheet.update_cell(i, 3, data["price"])
-                if "image" in data: sheet.update_cell(i, 4, data["image"])
-                if "category" in data: sheet.update_cell(i, 5, data["category"])
-                if "description" in data: sheet.update_cell(i, 6, data["description"])
-                if "stock" in data: sheet.update_cell(i, 7, data["stock"])
-                if "featured" in data: sheet.update_cell(i, 8, data["featured"])
-                return {"message": "Product updated"}
-        raise HTTPException(status_code=404, detail="Product not found")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.delete("/api/admin/products/{product_id}")
-async def delete_product(product_id: str, _=Depends(admin_required)):
-    try:
-        sheet = get_gspread_client().open_by_key(SHEET_ID).sheet1
-        records = sheet.get_all_records()
-        for i, row in enumerate(records, start=2):
-            if row.get("Product ID") == product_id:
-                sheet.delete_rows(i)
-                return {"message": "Product deleted"}
-        raise HTTPException(status_code=404, detail="Product not found")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 # ---------- Local Development ----------
 if __name__ == "__main__":
