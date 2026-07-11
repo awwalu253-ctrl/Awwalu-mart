@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -15,17 +16,20 @@
             margin: 16px 0 24px;
             border: 1px solid #f0ebe4;
         }
+
         .coupon-section h3 {
             font-size: 16px;
             font-weight: 600;
             margin-bottom: 8px;
             color: #2d2a24;
         }
+
         .coupon-input-group {
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
         }
+
         .coupon-input-group input {
             flex: 1;
             padding: 10px 16px;
@@ -35,10 +39,12 @@
             background: #fff;
             min-width: 150px;
         }
+
         .coupon-input-group input:focus {
             outline: none;
             border-color: #b8860b;
         }
+
         .coupon-input-group .btn-sm {
             padding: 10px 20px;
             font-size: 14px;
@@ -49,15 +55,24 @@
             cursor: pointer;
             transition: background 0.3s ease;
         }
+
         .coupon-input-group .btn-sm:hover {
             background: #d4a22a;
         }
+
         .coupon-message {
             margin-top: 8px;
             font-size: 14px;
         }
-        .coupon-message.success { color: #065f46; }
-        .coupon-message.error { color: #991b1b; }
+
+        .coupon-message.success {
+            color: #065f46;
+        }
+
+        .coupon-message.error {
+            color: #991b1b;
+        }
+
         .discount-display {
             margin-top: 8px;
             font-weight: 600;
@@ -65,6 +80,7 @@
             display: none;
             justify-content: space-between;
         }
+
         .checkout-total-final {
             display: flex;
             justify-content: space-between;
@@ -76,21 +92,25 @@
             font-weight: 700;
             color: #2d2a24;
         }
+
         .checkout-total-final span:last-child {
             color: #b8860b;
         }
+
         .checkout-total-final .original-price {
             font-size: 16px;
             color: #8a8078;
             text-decoration: line-through;
             margin-right: 8px;
         }
+
         .checkout-total-final .saved-amount {
             font-size: 16px;
             color: #065f46;
         }
     </style>
 </head>
+
 <body>
     <!-- Navigation -->
     <nav class="navbar" id="navbar"></nav>
@@ -157,7 +177,8 @@
 
                         <div class="form-group">
                             <label for="deliveryAddress">Delivery Address <span class="required">*</span></label>
-                            <textarea id="deliveryAddress" rows="3" placeholder="Enter your full delivery address" required></textarea>
+                            <textarea id="deliveryAddress" rows="3" placeholder="Enter your full delivery address"
+                                required></textarea>
                         </div>
 
                         <div class="form-group">
@@ -306,15 +327,23 @@
         // ============================================
         // COUPON LOGIC
         // ============================================
-        applyCouponBtn.addEventListener('click', async function() {
+        // ============================================
+        // COUPON LOGIC (with Minimum Order Check)
+        // ============================================
+        applyCouponBtn.addEventListener('click', async function () {
             const code = couponCodeInput.value.trim();
             if (!code) {
                 showToast('Please enter a coupon code.');
                 return;
             }
 
+            // Get the current order total
+            const currentTotal = window.orderTotal || orderTotal || 0;
+
             try {
-                const res = await fetch(`${API_BASE}/validate-coupon?code=${encodeURIComponent(code)}`);
+                const res = await fetch(
+                    `${API_BASE}/validate-coupon?code=${encodeURIComponent(code)}&total=${currentTotal}`
+                );
                 const data = await res.json();
 
                 // Clear previous messages
@@ -322,7 +351,7 @@
                 couponMessage.className = 'coupon-message';
 
                 if (data.valid) {
-                    // Calculate discount based on current total (orderTotal)
+                    // Calculate discount based on current total
                     let discount = 0;
                     if (data.discount_type === 'percentage') {
                         discount = (orderTotal * data.discount_value) / 100;
@@ -367,7 +396,7 @@
         // ============================================
         // HANDLE FORM SUBMISSION (WhatsApp Order)
         // ============================================
-        document.getElementById('checkoutForm').addEventListener('submit', function(e) {
+        document.getElementById('checkoutForm').addEventListener('submit', function (e) {
             e.preventDefault();
 
             const fullName = document.getElementById('fullName').value.trim();
@@ -444,4 +473,5 @@
         document.getElementById('fullName').focus();
     </script>
 </body>
+
 </html>

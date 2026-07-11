@@ -182,8 +182,9 @@ async def create_coupon(data: dict, _=Depends(admin_required)):
         data["discount_value"],
         data["expiry_date"],
         data["usage_limit"],
-        0,
-        "Yes"
+        0,  # used count
+        data.get("active", "Yes"),
+        data.get("min_order", 0)  # Min Order Amount
     ])
     return {"message": "Coupon created"}
 
@@ -191,7 +192,14 @@ async def create_coupon(data: dict, _=Depends(admin_required)):
 async def update_coupon(code: str, data: dict, _=Depends(admin_required)):
     sheet = get_sheet("Coupons")
     records = sheet.get_all_records()
-    col_map = {"discount_type": 2, "discount_value": 3, "expiry_date": 4, "usage_limit": 5, "active": 7}
+    col_map = {
+        "discount_type": 2,
+        "discount_value": 3,
+        "expiry_date": 4,
+        "usage_limit": 5,
+        "active": 7,
+        "min_order": 8  # Min Order Amount column
+    }
     for i, row in enumerate(records, start=2):
         if row["Code"] == code:
             for key, value in data.items():
@@ -212,14 +220,20 @@ async def delete_coupon(code: str, _=Depends(admin_required)):
 
 # ---------- Public Coupon Validation ----------
 @app.get("/api/validate-coupon")
-async def validate_coupon(code: str):
+async def validate_coupon(code: str, total: float = 0):
+    """
+    Validate a coupon code with an optional order total.
+    Query params: ?code=SAVE10&total=5000
+    """
     try:
         sheet = get_sheet("Coupons")
         records = sheet.get_all_records()
         for row in records:
             if row.get("Code") == code:
+                # Check active
                 if row.get("Active") != "Yes":
                     return {"valid": False, "reason": "Coupon is not active"}
+                # Check expiry
                 expiry = row.get("Expiry Date")
                 if expiry:
                     try:
@@ -228,15 +242,27 @@ async def validate_coupon(code: str):
                             return {"valid": False, "reason": "Coupon has expired"}
                     except:
                         pass
+                # Check usage limit
                 used = int(row.get("Used Count") or 0)
                 limit = int(row.get("Usage Limit") or 0)
                 if limit > 0 and used >= limit:
                     return {"valid": False, "reason": "Coupon usage limit reached"}
+
+                # --- NEW: Check minimum order amount ---
+                min_order = float(row.get("Min Order Amount") or 0)
+                if min_order > 0 and total < min_order:
+                    return {
+                        "valid": False,
+                        "reason": f"Minimum order of ₦{min_order:,.2f} required"
+                    }
+
+                # Return discount info
                 return {
                     "valid": True,
-                    "discount_type": row.get("Discount Type"),
+                    "discount_type": row.get("Discount Type"),  # percentage or fixed
                     "discount_value": float(row.get("Discount Value") or 0),
-                    "code": code
+                    "code": code,
+                    "min_order": min_order
                 }
         return {"valid": False, "reason": "Coupon not found"}
     except Exception as e:

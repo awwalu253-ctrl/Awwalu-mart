@@ -30,6 +30,7 @@
                         <th>Code</th>
                         <th>Type</th>
                         <th>Value</th>
+                        <th>Min Order</th>
                         <th>Expiry</th>
                         <th>Limit</th>
                         <th>Used</th>
@@ -38,7 +39,7 @@
                     </tr>
                 </thead>
                 <tbody id="couponList">
-                    <tr><td colspan="8" style="text-align:center; color:#8a8078;">Loading...</td></tr>
+                    <tr><td colspan="9" style="text-align:center; color:#8a8078;">Loading...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -65,6 +66,10 @@
                 <div class="form-group">
                     <label>Discount Value</label>
                     <input type="number" id="discountValue" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>Min Order Amount (₦)</label>
+                    <input type="number" id="minOrder" placeholder="0 for no minimum" value="0" />
                 </div>
                 <div class="form-group">
                     <label>Expiry Date</label>
@@ -110,7 +115,7 @@
             const coupons = await res.json();
             const tbody = document.getElementById('couponList');
             if (!coupons.length) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#8a8078;">No coupons yet.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#8a8078;">No coupons yet.</td></tr>';
                 return;
             }
             tbody.innerHTML = coupons.map(c => `
@@ -118,6 +123,7 @@
                     <td><strong>${c.Code}</strong></td>
                     <td>${c['Discount Type']}</td>
                     <td>${c['Discount Value']}</td>
+                    <td>₦${c['Min Order Amount'] || 0}</td>
                     <td>${c['Expiry Date']}</td>
                     <td>${c['Usage Limit']}</td>
                     <td>${c['Used Count'] || 0}</td>
@@ -136,6 +142,7 @@
             document.getElementById('couponForm').reset();
             document.getElementById('editCode').value = '';
             document.getElementById('code').disabled = false;
+            document.getElementById('minOrder').value = 0;
             document.getElementById('couponModal').style.display = 'flex';
         });
 
@@ -160,6 +167,7 @@
                 document.getElementById('code').disabled = true;
                 document.getElementById('discountType').value = c['Discount Type'];
                 document.getElementById('discountValue').value = c['Discount Value'];
+                document.getElementById('minOrder').value = c['Min Order Amount'] || 0;
                 document.getElementById('expiryDate').value = c['Expiry Date'];
                 document.getElementById('usageLimit').value = c['Usage Limit'];
                 document.getElementById('active').value = c.Active;
@@ -181,6 +189,7 @@
                 code: document.getElementById('code').value.trim(),
                 discount_type: document.getElementById('discountType').value,
                 discount_value: document.getElementById('discountValue').value,
+                min_order: parseFloat(document.getElementById('minOrder').value) || 0,
                 expiry_date: document.getElementById('expiryDate').value,
                 usage_limit: document.getElementById('usageLimit').value,
                 active: document.getElementById('active').value
