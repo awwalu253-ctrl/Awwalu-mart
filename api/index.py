@@ -19,8 +19,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ---------- JWT Configuration ----------
-JWT_SECRET = os.getenv("ADMIN_PASSWORD", "admin123")
+# ---------- Admin & JWT Configuration ----------
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")  # <-- ADD THIS LINE
+JWT_SECRET = ADMIN_PASSWORD  # Use the same secret for signing tokens
 JWT_ALGORITHM = "HS256"
 TOKEN_EXPIRY_HOURS = 24
 
