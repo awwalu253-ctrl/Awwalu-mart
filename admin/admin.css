@@ -99,3 +99,113 @@ th { background: #faf8f5; color: #4a443e; }
     transition: background 0.3s ease;
 }
 .btn-danger:hover { background: #a93226; }
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.admin-header h2 { margin: 0; }
+
+.table-wrapper {
+    overflow-x: auto;
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #f0ebe4;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #f0ebe4; }
+th { background: #faf8f5; color: #4a443e; font-weight: 600; }
+
+.category-badge {
+    display: inline-block;
+    background: #f0f5fd;
+    color: #2980b9;
+    padding: 2px 12px;
+    border-radius: 9999px;
+    font-size: 12px;
+}
+.stock-badge {
+    display: inline-block;
+    padding: 2px 12px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+.in-stock { background: #d1fae5; color: #065f46; }
+.out-of-stock { background: #fecaca; color: #991b1b; }
+
+.modal-large { max-width: 700px; width: 95%; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.btn-sm {
+    padding: 4px 12px;
+    font-size: 12px;
+    border-radius: 6px;
+    margin: 2px;
+}
+
+.btn-primary {
+    background: #b8860b;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+.btn-primary:hover { background: #d4a22a; }
+.btn-danger {
+    background: #c0392b;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+.btn-danger:hover { background: #a93226; }
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(4px);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 20px;
+}
+.modal-content {
+    background: #fff;
+    padding: 30px;
+    border-radius: 16px;
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+    width: 100%;
+}
+.modal-content .close {
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    font-size: 28px;
+    cursor: pointer;
+    color: #8a8078;
+    transition: color 0.3s ease;
+}
+.modal-content .close:hover { color: #2d2a24; }
+
+@media (max-width: 768px) {
+    .form-row { grid-template-columns: 1fr; }
+    .admin-header { flex-direction: column; align-items: stretch; }
+}

@@ -6,6 +6,32 @@ const API_BASE = window.location.hostname === 'localhost'
     : '/api';
 
 // ============================================
+// MAINTENANCE MODE CHECK
+// ============================================
+async function checkMaintenance() {
+    try {
+        const res = await fetch(`${API_BASE}/maintenance`);
+        const data = await res.json();
+        if (data.maintenance === true) {
+            // Show maintenance page
+            document.body.innerHTML = `
+                <div style="display:flex; align-items:center; justify-content:center; min-height:100vh; background:#faf8f5; text-align:center; padding:20px; flex-direction:column; font-family: 'Inter', sans-serif;">
+                    <i class="fas fa-tools" style="font-size:64px; color:#b8860b; margin-bottom:20px;"></i>
+                    <h1 style="font-size:32px; color:#2d2a24;">Under Maintenance</h1>
+                    <p style="color:#8a8078; max-width:400px; margin:0 auto;">We're currently updating our kitchen collection. Please check back soon!</p>
+                    <p style="color:#b5aaa2; font-size:14px; margin-top:12px;">🕒 Estimated time: 30 minutes</p>
+                </div>
+            `;
+            return true; // Maintenance is on
+        }
+        return false; // Maintenance is off
+    } catch (error) {
+        console.log('Maintenance check failed:', error);
+        return false;
+    }
+}
+
+// ============================================
 // NAVBAR & FOOTER
 // ============================================
 function loadNavbar() {
@@ -22,7 +48,7 @@ function loadNavbar() {
         <div class="container">
             <div class="navbar-left">
                 <a href="index.html">
-                    <img src="https://res.cloudinary.com/dszfpg8hj/image/upload/v1783539694/logo_m1tvqv.png" alt="Awwalu Kitchen Vault" class="logo" />
+                    <img src="${logoUrl}" alt="Awwalu Kitchen Vault" class="logo" />
                 </a>
             </div>
             <div class="navbar-right">
@@ -63,7 +89,7 @@ function loadFooter() {
     
     footer.innerHTML = `
         <div class="container">
-            <img src="https://res.cloudinary.com/dszfpg8hj/image/upload/v1783539694/logo_m1tvqv.png" alt="Awwalu Kitchen Vault" style="height:48px; margin-bottom:12px;" />
+            <img src="${logoUrl}" alt="Awwalu Kitchen Vault" style="height:48px; margin-bottom:12px;" />
             <p>&copy; 2026 Awwalu Kitchen Vault. All rights reserved.</p>
             <p class="small">Premium kitchen appliances, cookware, and utensils.</p>
         </div>
@@ -436,43 +462,41 @@ function updateQuantity(productId, delta) {
 // ============================================
 document.addEventListener('DOMContentLoaded', function() {
     const overlay = document.getElementById('promoOverlay');
-    const closeBtn = document.getElementById('promoClose');
-    const skipLink = document.getElementById('promoSkipLink');
-    const dontShowCheckbox = document.getElementById('dontShowAgain');
+    if (overlay) {
+        const closeBtn = document.getElementById('promoClose');
+        const skipLink = document.getElementById('promoSkipLink');
+        const dontShowCheckbox = document.getElementById('dontShowAgain');
 
-    // Check localStorage for permanent hide preference
-    if (localStorage.getItem('promoHidden') === 'true') {
-        overlay.classList.add('hidden');
-        return; // Exit early, don't show overlay
+        // Check localStorage for permanent hide preference
+        if (localStorage.getItem('promoHidden') === 'true') {
+            overlay.classList.add('hidden');
+        } else {
+            overlay.classList.remove('hidden');
+        }
+
+        function dismissPromo() {
+            overlay.classList.add('hidden');
+            if (dontShowCheckbox && dontShowCheckbox.checked) {
+                localStorage.setItem('promoHidden', 'true');
+            }
+        }
+
+        if (closeBtn) closeBtn.addEventListener('click', dismissPromo);
+        if (skipLink) {
+            skipLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                dismissPromo();
+            });
+        }
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) {
+                dismissPromo();
+            }
+        });
     }
 
-    // Show overlay (in case it was hidden)
-    overlay.classList.remove('hidden');
-
-    function dismissPromo() {
-        overlay.classList.add('hidden');
-        
-        // If checkbox is checked, save to localStorage
-        if (dontShowCheckbox && dontShowCheckbox.checked) {
-            localStorage.setItem('promoHidden', 'true');
-        }
-    }
-
-    // Close button
-    closeBtn.addEventListener('click', dismissPromo);
-
-    // "Continue browsing" link
-    skipLink.addEventListener('click', function(e) {
-        e.preventDefault();
-        dismissPromo();
-    });
-
-    // Click on backdrop (outside content) also closes
-    overlay.addEventListener('click', function(e) {
-        if (e.target === overlay) {
-            dismissPromo();
-        }
-    });
+    // Update cart badge on every page load
+    updateCartBadge();
 });
 
 // ============================================
@@ -489,8 +513,16 @@ window.filterProducts = filterProducts;
 window.toggleMobileMenu = toggleMobileMenu;
 
 // ============================================
-// INIT
+// INIT (runs after DOM is ready)
 // ============================================
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+    // First check maintenance mode
+    const maintenanceOn = await checkMaintenance();
+    if (maintenanceOn) {
+        // Maintenance page already shown, stop further execution
+        return;
+    }
+
+    // If not in maintenance, continue normal initialization
     updateCartBadge();
 });

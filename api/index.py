@@ -309,6 +309,58 @@ async def debug():
     except Exception as e:
         return {"error": str(e)}
 
+# ---------- Admin Product Management ----------
+@app.post("/api/admin/products")
+async def create_product(data: dict, _=Depends(admin_required)):
+    try:
+        sheet = get_gspread_client().open_by_key(SHEET_ID).sheet1
+        sheet.append_row([
+            data.get("id", ""),
+            data.get("name", ""),
+            data.get("price", ""),
+            data.get("image", ""),
+            data.get("category", ""),
+            data.get("description", ""),
+            data.get("stock", "Yes"),
+            data.get("featured", "No")
+        ])
+        return {"message": "Product created successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/admin/products/{product_id}")
+async def update_product(product_id: str, data: dict, _=Depends(admin_required)):
+    try:
+        sheet = get_gspread_client().open_by_key(SHEET_ID).sheet1
+        records = sheet.get_all_records()
+        for i, row in enumerate(records, start=2):
+            if row.get("Product ID") == product_id:
+                # Update fields
+                if "name" in data: sheet.update_cell(i, 2, data["name"])
+                if "price" in data: sheet.update_cell(i, 3, data["price"])
+                if "image" in data: sheet.update_cell(i, 4, data["image"])
+                if "category" in data: sheet.update_cell(i, 5, data["category"])
+                if "description" in data: sheet.update_cell(i, 6, data["description"])
+                if "stock" in data: sheet.update_cell(i, 7, data["stock"])
+                if "featured" in data: sheet.update_cell(i, 8, data["featured"])
+                return {"message": "Product updated"}
+        raise HTTPException(status_code=404, detail="Product not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/admin/products/{product_id}")
+async def delete_product(product_id: str, _=Depends(admin_required)):
+    try:
+        sheet = get_gspread_client().open_by_key(SHEET_ID).sheet1
+        records = sheet.get_all_records()
+        for i, row in enumerate(records, start=2):
+            if row.get("Product ID") == product_id:
+                sheet.delete_rows(i)
+                return {"message": "Product deleted"}
+        raise HTTPException(status_code=404, detail="Product not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # ---------- Local Development ----------
 if __name__ == "__main__":
     import uvicorn
