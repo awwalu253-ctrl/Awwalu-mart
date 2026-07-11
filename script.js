@@ -13,7 +13,6 @@ async function checkMaintenance() {
         const res = await fetch(`${API_BASE}/maintenance`);
         const data = await res.json();
         if (data.maintenance === true) {
-            // Show maintenance page
             document.body.innerHTML = `
                 <div style="display:flex; align-items:center; justify-content:center; min-height:100vh; background:#faf8f5; text-align:center; padding:20px; flex-direction:column; font-family: 'Inter', sans-serif;">
                     <i class="fas fa-tools" style="font-size:64px; color:#b8860b; margin-bottom:20px;"></i>
@@ -22,9 +21,9 @@ async function checkMaintenance() {
                     <p style="color:#b5aaa2; font-size:14px; margin-top:12px;">🕒 Estimated time: 30 minutes</p>
                 </div>
             `;
-            return true; // Maintenance is on
+            return true;
         }
-        return false; // Maintenance is off
+        return false;
     } catch (error) {
         console.log('Maintenance check failed:', error);
         return false;

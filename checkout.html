@@ -6,6 +6,90 @@
     <title>Awwalu Kitchen Vault - Checkout</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     <link rel="stylesheet" href="styles.css" />
+    <style>
+        /* Additional styles for coupon section */
+        .coupon-section {
+            background: #faf8f5;
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin: 16px 0 24px;
+            border: 1px solid #f0ebe4;
+        }
+        .coupon-section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2d2a24;
+        }
+        .coupon-input-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .coupon-input-group input {
+            flex: 1;
+            padding: 10px 16px;
+            border: 2px solid #f0ebe4;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #fff;
+            min-width: 150px;
+        }
+        .coupon-input-group input:focus {
+            outline: none;
+            border-color: #b8860b;
+        }
+        .coupon-input-group .btn-sm {
+            padding: 10px 20px;
+            font-size: 14px;
+            background: #b8860b;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        .coupon-input-group .btn-sm:hover {
+            background: #d4a22a;
+        }
+        .coupon-message {
+            margin-top: 8px;
+            font-size: 14px;
+        }
+        .coupon-message.success { color: #065f46; }
+        .coupon-message.error { color: #991b1b; }
+        .discount-display {
+            margin-top: 8px;
+            font-weight: 600;
+            color: #b8860b;
+            display: none;
+            justify-content: space-between;
+        }
+        .checkout-total-final {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 16px;
+            margin-top: 16px;
+            border-top: 2px solid #f0ebe4;
+            font-size: 20px;
+            font-weight: 700;
+            color: #2d2a24;
+        }
+        .checkout-total-final span:last-child {
+            color: #b8860b;
+        }
+        .checkout-total-final .original-price {
+            font-size: 16px;
+            color: #8a8078;
+            text-decoration: line-through;
+            margin-right: 8px;
+        }
+        .checkout-total-final .saved-amount {
+            font-size: 16px;
+            color: #065f46;
+        }
+    </style>
 </head>
 <body>
     <!-- Navigation -->
@@ -27,9 +111,28 @@
                             <i class="fas fa-spinner spinner"></i> Loading...
                         </p>
                     </div>
-                    <div class="checkout-total">
+                    <div class="checkout-total" id="checkoutTotalWrap">
                         <span>Total:</span>
                         <span id="checkoutTotal">₦0.00</span>
+                    </div>
+
+                    <!-- Coupon Section -->
+                    <div class="coupon-section">
+                        <h3><i class="fas fa-tag"></i> Have a Coupon?</h3>
+                        <div class="coupon-input-group">
+                            <input type="text" id="couponCode" placeholder="Enter coupon code" />
+                            <button id="applyCouponBtn" class="btn-sm">Apply</button>
+                        </div>
+                        <div id="couponMessage" class="coupon-message"></div>
+                        <div id="discountDisplay" class="discount-display">
+                            <span>Discount:</span>
+                            <span id="discountAmount">-₦0.00</span>
+                        </div>
+                        <!-- Final total with discount -->
+                        <div class="checkout-total-final" id="finalTotalWrap" style="display:none;">
+                            <span>Final Total:</span>
+                            <span id="finalTotalAmount">₦0.00</span>
+                        </div>
                     </div>
                 </div>
 
@@ -94,10 +197,20 @@
         // ============================================
         let orderItems = [];
         let orderTotal = 0;
+        let finalTotal = 0;
+        let appliedCoupon = null;
+        let discountAmount = 0;
 
         const checkoutItems = document.getElementById('checkoutItems');
         const checkoutTotal = document.getElementById('checkoutTotal');
         const checkoutWrapper = document.getElementById('checkoutWrapper');
+        const couponCodeInput = document.getElementById('couponCode');
+        const applyCouponBtn = document.getElementById('applyCouponBtn');
+        const couponMessage = document.getElementById('couponMessage');
+        const discountDisplay = document.getElementById('discountDisplay');
+        const discountAmountSpan = document.getElementById('discountAmount');
+        const finalTotalWrap = document.getElementById('finalTotalWrap');
+        const finalTotalAmount = document.getElementById('finalTotalAmount');
 
         // ============================================
         // FETCH PRODUCT BY ID
@@ -151,7 +264,7 @@
         }
 
         // ============================================
-        // RENDER ORDER ITEMS
+        // RENDER ORDER ITEMS & CALCULATE TOTAL
         // ============================================
         function renderOrderItems() {
             if (!orderItems || orderItems.length === 0) return;
@@ -182,12 +295,77 @@
             });
 
             checkoutItems.innerHTML = html;
-            checkoutTotal.textContent = `₦${total.toFixed(2)}`;
             orderTotal = total;
+            finalTotal = total;
+            checkoutTotal.textContent = `₦${total.toFixed(2)}`;
+            // Save totals globally for coupon logic
+            window.orderTotal = total;
+            window.orderFinalTotal = total;
         }
 
         // ============================================
-        // HANDLE FORM SUBMISSION
+        // COUPON LOGIC
+        // ============================================
+        applyCouponBtn.addEventListener('click', async function() {
+            const code = couponCodeInput.value.trim();
+            if (!code) {
+                showToast('Please enter a coupon code.');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/validate-coupon?code=${encodeURIComponent(code)}`);
+                const data = await res.json();
+
+                // Clear previous messages
+                couponMessage.textContent = '';
+                couponMessage.className = 'coupon-message';
+
+                if (data.valid) {
+                    // Calculate discount based on current total (orderTotal)
+                    let discount = 0;
+                    if (data.discount_type === 'percentage') {
+                        discount = (orderTotal * data.discount_value) / 100;
+                    } else {
+                        discount = data.discount_value; // fixed amount
+                    }
+                    // Cap discount to order total
+                    discount = Math.min(discount, orderTotal);
+                    discountAmount = discount;
+                    appliedCoupon = data;
+
+                    // Update UI
+                    couponMessage.textContent = `✅ Coupon applied! You saved ₦${discount.toFixed(2)}`;
+                    couponMessage.className = 'coupon-message success';
+                    discountDisplay.style.display = 'flex';
+                    discountAmountSpan.textContent = `-₦${discount.toFixed(2)}`;
+
+                    // Update final total
+                    finalTotal = orderTotal - discount;
+                    finalTotalWrap.style.display = 'flex';
+                    finalTotalAmount.textContent = `₦${finalTotal.toFixed(2)}`;
+                    checkoutTotal.textContent = `₦${orderTotal.toFixed(2)}`; // keep original total visible
+
+                    window.orderFinalTotal = finalTotal;
+                } else {
+                    couponMessage.textContent = `❌ ${data.reason || 'Invalid coupon'}`;
+                    couponMessage.className = 'coupon-message error';
+                    // Reset discount
+                    discountAmount = 0;
+                    appliedCoupon = null;
+                    discountDisplay.style.display = 'none';
+                    finalTotalWrap.style.display = 'none';
+                    checkoutTotal.textContent = `₦${orderTotal.toFixed(2)}`;
+                    window.orderFinalTotal = orderTotal;
+                }
+            } catch (error) {
+                console.error('Coupon validation error:', error);
+                showToast('Failed to validate coupon. Please try again.');
+            }
+        });
+
+        // ============================================
+        // HANDLE FORM SUBMISSION (WhatsApp Order)
         // ============================================
         document.getElementById('checkoutForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -207,7 +385,10 @@
                 return;
             }
 
-            // --- Build WhatsApp message with total ---
+            // Get final total (with coupon applied)
+            const total = window.orderFinalTotal || orderTotal || 0;
+
+            // Build WhatsApp message
             let message = '🛒 *Awwalu Kitchen Vault - Order*%0A%0A';
             message += '*Customer Information:*%0A';
             message += `Name: ${fullName}%0A`;
@@ -216,17 +397,22 @@
             message += `Address: ${deliveryAddress}%0A%0A`;
             message += '*Order Items:*%0A';
 
-            // Calculate total from orderItems
-            let total = 0;
+            let subtotal = 0;
             orderItems.forEach((item) => {
                 const qty = item.quantity || 1;
                 const price = parseFloat(item.price.replace(/[^0-9.]/g, '') || '0');
-                total += price * qty;
+                subtotal += price * qty;
                 message += `- ${item.name} (${item.price}) × ${qty}%0A`;
             });
 
-            // Append total (always show, even if ₦0.00)
-            message += `%0A*Total: ₦${total.toFixed(2)}*%0A%0A`;
+            message += `%0A*Subtotal: ₦${subtotal.toFixed(2)}*%0A`;
+
+            if (appliedCoupon) {
+                message += `*Coupon Applied:* ${appliedCoupon.code} (${appliedCoupon.discount_type === 'percentage' ? appliedCoupon.discount_value + '%' : '₦' + appliedCoupon.discount_value})%0A`;
+                message += `*You Saved:* ₦${discountAmount.toFixed(2)}%0A`;
+            }
+
+            message += `*Total: ₦${total.toFixed(2)}*%0A%0A`;
 
             if (deliveryNotes) {
                 message += `*Delivery Notes:* ${deliveryNotes}%0A%0A`;

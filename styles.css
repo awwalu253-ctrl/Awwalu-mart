@@ -1878,3 +1878,56 @@ img {
 .promo-dont-show span {
     font-size: 14px;
 }
+
+.coupon-section {
+    background: #faf8f5;
+    padding: 16px 20px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    border: 1px solid #f0ebe4;
+}
+.coupon-section h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+.coupon-input-group {
+    display: flex;
+    gap: 8px;
+}
+.coupon-input-group input {
+    flex: 1;
+    padding: 10px 16px;
+    border: 2px solid #f0ebe4;
+    border-radius: 8px;
+    font-size: 14px;
+    background: #fff;
+}
+.coupon-input-group input:focus {
+    outline: none;
+    border-color: #b8860b;
+}
+.coupon-input-group .btn-sm {
+    padding: 10px 20px;
+    font-size: 14px;
+    background: #b8860b;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+.coupon-input-group .btn-sm:hover {
+    background: #d4a22a;
+}
+.coupon-message {
+    margin-top: 8px;
+    font-size: 14px;
+}
+.coupon-message.success { color: #065f46; }
+.coupon-message.error { color: #991b1b; }
+.discount-display {
+    margin-top: 8px;
+    font-weight: 600;
+    color: #b8860b;
+}

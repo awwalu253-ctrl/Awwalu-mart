@@ -1,5 +1,6 @@
 import os
 import json
+import uuid
 import jwt
 from datetime import datetime, timedelta
 from typing import List, Dict
@@ -20,8 +21,8 @@ app.add_middleware(
 )
 
 # ---------- Admin & JWT Configuration ----------
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")  # <-- ADD THIS LINE
-JWT_SECRET = ADMIN_PASSWORD  # Use the same secret for signing tokens
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
+JWT_SECRET = ADMIN_PASSWORD
 JWT_ALGORITHM = "HS256"
 TOKEN_EXPIRY_HOURS = 24
 
@@ -49,21 +50,32 @@ def get_sheet(sheet_name):
         return client.open_by_key(SHEET_ID).add_worksheet(title=sheet_name, rows=100, cols=10)
 
 def get_config():
-    sheet = get_sheet("Config")
-    records = sheet.get_all_records()
-    config = {}
-    for row in records:
-        config[row["Setting"]] = row["Value"]
-    return config
+    try:
+        sheet = get_sheet("Config")
+        records = sheet.get_all_records()
+        config = {}
+        for row in records:
+            if "Setting" in row and "Value" in row:
+                config[row["Setting"]] = row["Value"]
+        return config
+    except Exception:
+        return {"maintenance_mode": "No"}
 
 def update_config(setting, value):
-    sheet = get_sheet("Config")
-    records = sheet.get_all_records()
-    for i, row in enumerate(records, start=2):
-        if row["Setting"] == setting:
-            sheet.update_cell(i, 2, value)
-            return
-    sheet.append_row([setting, value])
+    try:
+        sheet = get_sheet("Config")
+        records = sheet.get_all_records()
+        # Ensure headers exist
+        if not records or "Setting" not in records[0] or "Value" not in records[0]:
+            sheet.update_cell(1, 1, "Setting")
+            sheet.update_cell(1, 2, "Value")
+        for i, row in enumerate(records, start=2):
+            if row.get("Setting") == setting:
+                sheet.update_cell(i, 2, value)
+                return
+        sheet.append_row([setting, value])
+    except Exception as e:
+        print(f"Error updating Config: {e}")
 
 # ---------- JWT Functions ----------
 def create_token(username: str) -> str:
@@ -144,7 +156,6 @@ async def admin_login(request: Request):
 
 @app.post("/api/admin/logout")
 async def admin_logout():
-    # Client-side cleanup – just return success
     return {"message": "Logged out"}
 
 def admin_required(auth: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
@@ -198,6 +209,39 @@ async def delete_coupon(code: str, _=Depends(admin_required)):
             sheet.delete_rows(i)
             return {"message": "Coupon deleted"}
     raise HTTPException(status_code=404, detail="Coupon not found")
+
+# ---------- Public Coupon Validation ----------
+@app.get("/api/validate-coupon")
+async def validate_coupon(code: str):
+    try:
+        sheet = get_sheet("Coupons")
+        records = sheet.get_all_records()
+        for row in records:
+            if row.get("Code") == code:
+                if row.get("Active") != "Yes":
+                    return {"valid": False, "reason": "Coupon is not active"}
+                expiry = row.get("Expiry Date")
+                if expiry:
+                    try:
+                        expiry_date = datetime.strptime(expiry, "%Y-%m-%d")
+                        if expiry_date < datetime.now():
+                            return {"valid": False, "reason": "Coupon has expired"}
+                    except:
+                        pass
+                used = int(row.get("Used Count") or 0)
+                limit = int(row.get("Usage Limit") or 0)
+                if limit > 0 and used >= limit:
+                    return {"valid": False, "reason": "Coupon usage limit reached"}
+                return {
+                    "valid": True,
+                    "discount_type": row.get("Discount Type"),
+                    "discount_value": float(row.get("Discount Value") or 0),
+                    "code": code
+                }
+        return {"valid": False, "reason": "Coupon not found"}
+    except Exception as e:
+        print(f"Error validating coupon: {e}")
+        return {"valid": False, "reason": "Server error"}
 
 # ---------- Maintenance Mode ----------
 @app.get("/api/admin/maintenance")
@@ -307,7 +351,8 @@ async def root():
             "/api/test",
             "/api/debug",
             "/api/maintenance",
-            "/api/admin/login"
+            "/api/admin/login",
+            "/api/validate-coupon"
         ]
     }
 
