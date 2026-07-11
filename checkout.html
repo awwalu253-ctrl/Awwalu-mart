@@ -8,8 +8,10 @@
     <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+    <!-- Navigation -->
     <nav class="navbar" id="navbar"></nav>
 
+    <!-- Checkout Section -->
     <section class="section checkout-section">
         <div class="container">
             <h2 class="section-title">
@@ -69,6 +71,7 @@
         </div>
     </section>
 
+    <!-- Footer -->
     <footer class="footer" id="footer"></footer>
 
     <script src="script.js"></script>
@@ -204,7 +207,7 @@
                 return;
             }
 
-            // Build order message
+            // --- Build WhatsApp message with total ---
             let message = '🛒 *Awwalu Kitchen Vault - Order*%0A%0A';
             message += '*Customer Information:*%0A';
             message += `Name: ${fullName}%0A`;
@@ -213,6 +216,7 @@
             message += `Address: ${deliveryAddress}%0A%0A`;
             message += '*Order Items:*%0A';
 
+            // Calculate total from orderItems
             let total = 0;
             orderItems.forEach((item) => {
                 const qty = item.quantity || 1;
@@ -221,6 +225,7 @@
                 message += `- ${item.name} (${item.price}) × ${qty}%0A`;
             });
 
+            // Append total (always show, even if ₦0.00)
             message += `%0A*Total: ₦${total.toFixed(2)}*%0A%0A`;
 
             if (deliveryNotes) {
@@ -229,7 +234,7 @@
 
             message += `Thank you for shopping with Awwalu Kitchen Vault! 🍳`;
 
-            const whatsappNumber = '2348086111492';
+            const whatsappNumber = '2348086111492'; // Your number
             const url = `https://wa.me/${whatsappNumber}?text=${message}`;
             window.open(url, '_blank');
 

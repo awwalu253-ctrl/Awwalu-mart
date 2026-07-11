@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Coupons</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <nav class="admin-nav">
+        <h1>🛠️ Admin Panel</h1>
+        <div>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="coupons.html" class="active">Coupons</a>
+            <a href="orders.html">Orders</a>
+            <button id="logoutBtn">Logout</button>
+        </div>
+    </nav>
+    <main class="admin-main">
+        <h2>Coupon Codes</h2>
+        <button id="createCouponBtn" class="btn-primary">+ Create Coupon</button>
+        <table id="couponTable">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Type</th>
+                    <th>Value</th>
+                    <th>Expiry</th>
+                    <th>Limit</th>
+                    <th>Used</th>
+                    <th>Active</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="couponList"></tbody>
+        </table>
+    </main>
+    <!-- Modal for create/edit -->
+    <div id="couponModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3 id="modalTitle">Create Coupon</h3>
+            <form id="couponForm">
+                <input type="hidden" id="editCode">
+                <div class="form-group">
+                    <label>Coupon Code</label>
+                    <input type="text" id="code" required>
+                </div>
+                <div class="form-group">
+                    <label>Discount Type</label>
+                    <select id="discountType">
+                        <option value="percentage">Percentage</option>
+                        <option value="fixed">Fixed Amount</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Discount Value</label>
+                    <input type="number" id="discountValue" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>Expiry Date</label>
+                    <input type="date" id="expiryDate" required>
+                </div>
+                <div class="form-group">
+                    <label>Usage Limit</label>
+                    <input type="number" id="usageLimit" value="100" required>
+                </div>
+                <div class="form-group">
+                    <label>Active</label>
+                    <select id="active">
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary">Save</button>
+            </form>
+        </div>
+    </div>
+    <script>
+        // Similar to dashboard, with coupon management functions
+    </script>
+</body>
+</html>
