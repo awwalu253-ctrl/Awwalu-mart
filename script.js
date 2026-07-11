@@ -40,8 +40,7 @@ function loadNavbar() {
     const cartItems = JSON.parse(localStorage.getItem('awwalumart-cart') || '[]');
     const totalItems = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
 
-    // === CHANGE THIS TO YOUR CLOUDINARY URL ===
-    const logoUrl = 'https://res.cloudinary.com/your-cloud-name/image/upload/your-logo.png';
+    const logoUrl = 'https://res.cloudinary.com/dszfpg8hj/image/upload/v1783539694/logo_m1tvqv.png';
 
     navbar.innerHTML = `
         <div class="container">
@@ -82,10 +81,9 @@ function loadNavbar() {
 function loadFooter() {
     const footer = document.getElementById('footer');
     if (!footer) return;
-    
-    // === CHANGE THIS TO YOUR CLOUDINARY URL ===
-    const logoUrl = 'https://res.cloudinary.com/your-cloud-name/image/upload/your-logo.png';
-    
+
+    const logoUrl = 'https://res.cloudinary.com/dszfpg8hj/image/upload/v1783539694/logo_m1tvqv.png';
+
     footer.innerHTML = `
         <div class="container">
             <img src="${logoUrl}" alt="Awwalu Kitchen Vault" style="height:48px; margin-bottom:12px;" />

@@ -76,8 +76,8 @@ def update_config(setting, value):
     except Exception as e:
         print(f"Error updating Config: {e}")
 
-def increment_coupon_usage(code: str):
-    """Increment the usage count for a coupon."""
+def increment_coupon_usage(code: str) -> bool:
+    """Increment the usage count for a coupon. Returns True if successful."""
     try:
         sheet = get_sheet("Coupons")
         records = sheet.get_all_records()
@@ -85,10 +85,11 @@ def increment_coupon_usage(code: str):
             if row.get("Code") == code:
                 current = int(row.get("Used Count") or 0)
                 sheet.update_cell(i, 6, current + 1)  # Column 6 = Used Count
+                print(f"Incremented coupon {code} from {current} to {current+1}")
                 return True
         return False
     except Exception as e:
-        print(f"Error incrementing coupon usage: {e}")
+        print(f"Error incrementing coupon: {e}")
         return False
 
 # ---------- JWT Functions ----------
@@ -257,7 +258,10 @@ async def validate_coupon(code: str, total: float = 0):
                 used = int(row.get("Used Count") or 0)
                 limit = int(row.get("Usage Limit") or 0)
                 if limit > 0 and used >= limit:
-                    return {"valid": False, "reason": "Coupon usage limit reached"}
+                    return {
+                        "valid": False,
+                        "reason": f"Coupon usage limit reached ({used}/{limit} used)"
+                    }
                 min_order = float(row.get("Min Order Amount") or 0)
                 if min_order > 0 and total < min_order:
                     return {
@@ -306,6 +310,7 @@ async def get_orders(_=Depends(admin_required)):
 
 @app.post("/api/admin/orders")
 async def log_order(data: dict):
+    # Log order to sheet (public endpoint)
     try:
         sheet = get_sheet("Orders")
         sheet.append_row([
@@ -317,15 +322,18 @@ async def log_order(data: dict):
             data.get("items", ""),
             data.get("total", "0"),
             "Pending",
-            data.get("coupon_code", "")  # Store coupon code
+            data.get("coupon_code", "")
         ])
-        # Increment coupon usage if a coupon was used
-        coupon_code = data.get("coupon_code")
-        if coupon_code:
-            increment_coupon_usage(coupon_code)
-        return {"message": "Order logged"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Order logging error: {e}")
+        # Continue to increment coupon even if order logging fails
+
+    # Increment coupon usage if a coupon was used
+    coupon_code = data.get("coupon_code")
+    if coupon_code:
+        increment_coupon_usage(coupon_code)
+
+    return {"message": "Order processed"}
 
 # ---------- Admin Product Management ----------
 @app.post("/api/admin/products")
@@ -374,6 +382,42 @@ async def delete_product(product_id: str, _=Depends(admin_required)):
         raise HTTPException(status_code=404, detail="Product not found")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# ---------- Debug Endpoints ----------
+@app.get("/api/debug-coupon")
+async def debug_coupon(code: str):
+    """Check coupon details (for debugging)."""
+    try:
+        sheet = get_sheet("Coupons")
+        records = sheet.get_all_records()
+        for row in records:
+            if row.get("Code") == code:
+                return {
+                    "code": row.get("Code"),
+                    "used": int(row.get("Used Count") or 0),
+                    "limit": int(row.get("Usage Limit") or 0),
+                    "active": row.get("Active"),
+                    "min_order": float(row.get("Min Order Amount") or 0)
+                }
+        return {"error": "Coupon not found"}
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.get("/api/debug")
+async def debug():
+    try:
+        products = get_products()
+        bundles = get_bundles()
+        config = get_config()
+        return {
+            "has_credentials_env": bool(os.getenv("GOOGLE_CREDENTIALS")),
+            "sheet_id": SHEET_ID,
+            "products_count": len(products),
+            "bundles_count": len(bundles),
+            "maintenance_mode": config.get("maintenance_mode", "No")
+        }
+    except Exception as e:
+        return {"error": str(e)}
 
 # ---------- Public API Routes ----------
 @app.get("/")
@@ -434,22 +478,6 @@ async def get_bundle_by_id(bundle_id: str):
             bundle["products"] = products
             return bundle
     raise HTTPException(status_code=404, detail="Bundle not found")
-
-@app.get("/api/debug")
-async def debug():
-    try:
-        products = get_products()
-        bundles = get_bundles()
-        config = get_config()
-        return {
-            "has_credentials_env": bool(os.getenv("GOOGLE_CREDENTIALS")),
-            "sheet_id": SHEET_ID,
-            "products_count": len(products),
-            "bundles_count": len(bundles),
-            "maintenance_mode": config.get("maintenance_mode", "No")
-        }
-    except Exception as e:
-        return {"error": str(e)}
 
 # ---------- Local Development ----------
 if __name__ == "__main__":
