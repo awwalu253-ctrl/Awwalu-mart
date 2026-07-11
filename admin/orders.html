@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orders - Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <nav class="admin-nav">
+        <h1>🛠️ Admin Panel</h1>
+        <div>
+            <a href="/admin/dashboard.html">Dashboard</a>
+            <a href="/admin/coupons.html">Coupons</a>
+            <a href="/admin/orders.html" class="active">Orders</a>
+            <button id="logoutBtn">Logout</button>
+        </div>
+    </nav>
+    <main class="admin-main">
+        <h2>Orders</h2>
+        <table id="orderTable">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Date</th>
+                    <th>Customer</th>
+                    <th>Phone</th>
+                    <th>Address</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="orderList"></tbody>
+        </table>
+    </main>
+    <script>
+        const API_BASE = window.location.origin + '/api';
+        const token = localStorage.getItem('adminToken');
+        if (!token) window.location.href = '/admin/index.html';
+
+        async function fetchWithAuth(url, options = {}) {
+            const res = await fetch(url, {
+                ...options,
+                headers: { ...options.headers, 'Authorization': `Bearer ${token}` }
+            });
+            if (res.status === 401) {
+                localStorage.removeItem('adminToken');
+                window.location.href = '/admin/index.html';
+            }
+            return res;
+        }
+
+        async function loadOrders() {
+            const res = await fetchWithAuth(`${API_BASE}/admin/orders`);
+            const orders = await res.json();
+            const tbody = document.getElementById('orderList');
+            if (!orders.length) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#8a8078;">No orders yet.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = orders.map(o => `
+                <tr>
+                    <td>${o['Order ID'] || '-'}</td>
+                    <td>${o['Date'] || '-'}</td>
+                    <td>${o['Customer Name'] || '-'}</td>
+                    <td>${o['Phone'] || '-'}</td>
+                    <td>${o['Address'] || '-'}</td>
+                    <td>${o['Items'] || '-'}</td>
+                    <td>₦${o['Total'] || '0'}</td>
+                    <td>${o['Status'] || 'Pending'}</td>
+                </tr>
+            `).join('');
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await fetchWithAuth(`${API_BASE}/admin/logout`, { method: 'POST' });
+            localStorage.removeItem('adminToken');
+            window.location.href = '/admin/index.html';
+        });
+
+        loadOrders();
+    </script>
+</body>
+</html>
