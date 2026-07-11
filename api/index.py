@@ -305,7 +305,7 @@ async def get_orders(_=Depends(admin_required)):
         return []
 
 @app.post("/api/admin/orders")
-async def log_order(data: dict, _=Depends(admin_required)):
+async def log_order(data: dict):
     try:
         sheet = get_sheet("Orders")
         sheet.append_row([
