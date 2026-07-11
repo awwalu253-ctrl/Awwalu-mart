@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,15 +8,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="admin.css">
 </head>
+
 <body>
     <nav class="admin-nav">
         <h1>🛠️ Admin Panel</h1>
-        <div>
-            <a href="dashboard.html" class="active">Dashboard</a>
-            <a href="coupons.html">Coupons</a>
-            <a href="orders.html">Orders</a>
-            <button id="logoutBtn">Logout</button>
-        </div>
+        <a href="/admin/dashboard.html" class="active">Dashboard</a>
+        <a href="/admin/coupons.html">Coupons</a>
+        <a href="/admin/orders.html">Orders</a>
     </nav>
     <main class="admin-main">
         <h2>Dashboard</h2>
@@ -95,4 +94,5 @@
         loadStats();
     </script>
 </body>
+
 </html>
