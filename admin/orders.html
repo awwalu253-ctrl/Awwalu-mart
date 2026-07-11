@@ -21,7 +21,7 @@
     <main class="admin-main">
         <h2>📋 Orders</h2>
         <div class="table-wrapper">
-            <table id="orderTable">
+            <table>
                 <thead>
                     <tr>
                         <th>Order ID</th>
@@ -31,11 +31,12 @@
                         <th>Address</th>
                         <th>Items</th>
                         <th>Total</th>
+                        <th>Coupon</th>
                         <th>Status</th>
                     </tr>
                 </thead>
                 <tbody id="orderList">
-                    <tr><td colspan="8" style="text-align:center; padding:40px; color:#8a8078;">
+                    <tr><td colspan="9" style="text-align:center; padding:40px; color:#8a8078;">
                         <i class="fas fa-spinner spinner"></i> Loading orders...
                     </td></tr>
                 </tbody>
@@ -60,25 +61,31 @@
         }
 
         async function loadOrders() {
-            const res = await fetchWithAuth(`${API_BASE}/admin/orders`);
-            const orders = await res.json();
-            const tbody = document.getElementById('orderList');
-            if (!orders.length) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#8a8078;">No orders yet.</td></tr>';
-                return;
+            try {
+                const res = await fetchWithAuth(`${API_BASE}/admin/orders`);
+                const orders = await res.json();
+                const tbody = document.getElementById('orderList');
+                if (!orders.length) {
+                    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#8a8078;">No orders yet.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = orders.map(o => `
+                    <tr>
+                        <td>${o['Order ID'] || '-'}</td>
+                        <td>${o['Date'] || '-'}</td>
+                        <td>${o['Customer Name'] || '-'}</td>
+                        <td>${o['Phone'] || '-'}</td>
+                        <td>${o['Address'] || '-'}</td>
+                        <td>${o['Items'] || '-'}</td>
+                        <td>₦${o['Total'] || '0'}</td>
+                        <td>${o['Coupon'] || '—'}</td>
+                        <td><span class="status-badge ${(o['Status'] || 'Pending').toLowerCase()}">${o['Status'] || 'Pending'}</span></td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading orders:', error);
+                document.getElementById('orderList').innerHTML = `<tr><td colspan="9" style="text-align:center; color:#991b1b;">Failed to load orders.</td></tr>`;
             }
-            tbody.innerHTML = orders.map(o => `
-                <tr>
-                    <td>${o['Order ID'] || '-'}</td>
-                    <td>${o['Date'] || '-'}</td>
-                    <td>${o['Customer Name'] || '-'}</td>
-                    <td>${o['Phone'] || '-'}</td>
-                    <td>${o['Address'] || '-'}</td>
-                    <td>${o['Items'] || '-'}</td>
-                    <td>₦${o['Total'] || '0'}</td>
-                    <td><span class="status-badge ${(o['Status'] || 'Pending').toLowerCase()}">${o['Status'] || 'Pending'}</span></td>
-                </tr>
-            `).join('');
         }
 
         document.getElementById('logoutBtn').addEventListener('click', async () => {

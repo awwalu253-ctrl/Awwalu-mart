@@ -65,7 +65,6 @@ def update_config(setting, value):
     try:
         sheet = get_sheet("Config")
         records = sheet.get_all_records()
-        # Ensure headers exist
         if not records or "Setting" not in records[0] or "Value" not in records[0]:
             sheet.update_cell(1, 1, "Setting")
             sheet.update_cell(1, 2, "Value")
@@ -76,6 +75,21 @@ def update_config(setting, value):
         sheet.append_row([setting, value])
     except Exception as e:
         print(f"Error updating Config: {e}")
+
+def increment_coupon_usage(code: str):
+    """Increment the usage count for a coupon."""
+    try:
+        sheet = get_sheet("Coupons")
+        records = sheet.get_all_records()
+        for i, row in enumerate(records, start=2):
+            if row.get("Code") == code:
+                current = int(row.get("Used Count") or 0)
+                sheet.update_cell(i, 6, current + 1)  # Column 6 = Used Count
+                return True
+        return False
+    except Exception as e:
+        print(f"Error incrementing coupon usage: {e}")
+        return False
 
 # ---------- JWT Functions ----------
 def create_token(username: str) -> str:
@@ -184,7 +198,7 @@ async def create_coupon(data: dict, _=Depends(admin_required)):
         data["usage_limit"],
         0,  # used count
         data.get("active", "Yes"),
-        data.get("min_order", 0)  # Min Order Amount
+        data.get("min_order", 0)
     ])
     return {"message": "Coupon created"}
 
@@ -198,7 +212,7 @@ async def update_coupon(code: str, data: dict, _=Depends(admin_required)):
         "expiry_date": 4,
         "usage_limit": 5,
         "active": 7,
-        "min_order": 8  # Min Order Amount column
+        "min_order": 8
     }
     for i, row in enumerate(records, start=2):
         if row["Code"] == code:
@@ -230,10 +244,8 @@ async def validate_coupon(code: str, total: float = 0):
         records = sheet.get_all_records()
         for row in records:
             if row.get("Code") == code:
-                # Check active
                 if row.get("Active") != "Yes":
                     return {"valid": False, "reason": "Coupon is not active"}
-                # Check expiry
                 expiry = row.get("Expiry Date")
                 if expiry:
                     try:
@@ -242,24 +254,19 @@ async def validate_coupon(code: str, total: float = 0):
                             return {"valid": False, "reason": "Coupon has expired"}
                     except:
                         pass
-                # Check usage limit
                 used = int(row.get("Used Count") or 0)
                 limit = int(row.get("Usage Limit") or 0)
                 if limit > 0 and used >= limit:
                     return {"valid": False, "reason": "Coupon usage limit reached"}
-
-                # --- NEW: Check minimum order amount ---
                 min_order = float(row.get("Min Order Amount") or 0)
                 if min_order > 0 and total < min_order:
                     return {
                         "valid": False,
                         "reason": f"Minimum order of ₦{min_order:,.2f} required"
                     }
-
-                # Return discount info
                 return {
                     "valid": True,
-                    "discount_type": row.get("Discount Type"),  # percentage or fixed
+                    "discount_type": row.get("Discount Type"),
                     "discount_value": float(row.get("Discount Value") or 0),
                     "code": code,
                     "min_order": min_order
@@ -309,8 +316,13 @@ async def log_order(data: dict, _=Depends(admin_required)):
             data.get("address", ""),
             data.get("items", ""),
             data.get("total", "0"),
-            "Pending"
+            "Pending",
+            data.get("coupon_code", "")  # Store coupon code
         ])
+        # Increment coupon usage if a coupon was used
+        coupon_code = data.get("coupon_code")
+        if coupon_code:
+            increment_coupon_usage(coupon_code)
         return {"message": "Order logged"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
