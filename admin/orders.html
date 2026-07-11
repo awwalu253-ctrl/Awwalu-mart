@@ -12,28 +12,35 @@
         <h1>🛠️ Admin Panel</h1>
         <div>
             <a href="/admin/dashboard.html">Dashboard</a>
+            <a href="/admin/products.html">Products</a>
             <a href="/admin/coupons.html">Coupons</a>
             <a href="/admin/orders.html" class="active">Orders</a>
             <button id="logoutBtn">Logout</button>
         </div>
     </nav>
     <main class="admin-main">
-        <h2>Orders</h2>
-        <table id="orderTable">
-            <thead>
-                <tr>
-                    <th>Order ID</th>
-                    <th>Date</th>
-                    <th>Customer</th>
-                    <th>Phone</th>
-                    <th>Address</th>
-                    <th>Items</th>
-                    <th>Total</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody id="orderList"></tbody>
-        </table>
+        <h2>📋 Orders</h2>
+        <div class="table-wrapper">
+            <table id="orderTable">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Date</th>
+                        <th>Customer</th>
+                        <th>Phone</th>
+                        <th>Address</th>
+                        <th>Items</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="orderList">
+                    <tr><td colspan="8" style="text-align:center; padding:40px; color:#8a8078;">
+                        <i class="fas fa-spinner spinner"></i> Loading orders...
+                    </td></tr>
+                </tbody>
+            </table>
+        </div>
     </main>
     <script>
         const API_BASE = window.location.origin + '/api';
@@ -69,7 +76,7 @@
                     <td>${o['Address'] || '-'}</td>
                     <td>${o['Items'] || '-'}</td>
                     <td>₦${o['Total'] || '0'}</td>
-                    <td>${o['Status'] || 'Pending'}</td>
+                    <td><span class="status-badge ${(o['Status'] || 'Pending').toLowerCase()}">${o['Status'] || 'Pending'}</span></td>
                 </tr>
             `).join('');
         }

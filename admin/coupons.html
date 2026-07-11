@@ -12,32 +12,39 @@
         <h1>🛠️ Admin Panel</h1>
         <div>
             <a href="/admin/dashboard.html">Dashboard</a>
+            <a href="/admin/products.html">Products</a>
             <a href="/admin/coupons.html" class="active">Coupons</a>
             <a href="/admin/orders.html">Orders</a>
             <button id="logoutBtn">Logout</button>
         </div>
     </nav>
     <main class="admin-main">
-        <h2>Coupon Codes</h2>
-        <button id="createCouponBtn" class="btn-primary">+ Create Coupon</button>
-        <table id="couponTable">
-            <thead>
-                <tr>
-                    <th>Code</th>
-                    <th>Type</th>
-                    <th>Value</th>
-                    <th>Expiry</th>
-                    <th>Limit</th>
-                    <th>Used</th>
-                    <th>Active</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="couponList"></tbody>
-        </table>
+        <div class="admin-header">
+            <h2>🏷️ Coupon Codes</h2>
+            <button id="createCouponBtn" class="btn-primary">+ Create Coupon</button>
+        </div>
+        <div class="table-wrapper">
+            <table id="couponTable">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Type</th>
+                        <th>Value</th>
+                        <th>Expiry</th>
+                        <th>Limit</th>
+                        <th>Used</th>
+                        <th>Active</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="couponList">
+                    <tr><td colspan="8" style="text-align:center; color:#8a8078;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
     </main>
 
-    <!-- Create/Edit Modal -->
+    <!-- Coupon Modal -->
     <div id="couponModal" class="modal">
         <div class="modal-content">
             <span class="close" id="modalClose">&times;</span>
@@ -89,11 +96,7 @@
         async function fetchWithAuth(url, options = {}) {
             const res = await fetch(url, {
                 ...options,
-                headers: {
-                    ...options.headers,
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
+                headers: { ...options.headers, 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
             });
             if (res.status === 401) {
                 localStorage.removeItem('adminToken');
@@ -107,7 +110,7 @@
             const coupons = await res.json();
             const tbody = document.getElementById('couponList');
             if (!coupons.length) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#8a8078;">No coupons created yet.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#8a8078;">No coupons yet.</td></tr>';
                 return;
             }
             tbody.innerHTML = coupons.map(c => `
@@ -132,6 +135,7 @@
             document.getElementById('modalTitle').textContent = 'Create Coupon';
             document.getElementById('couponForm').reset();
             document.getElementById('editCode').value = '';
+            document.getElementById('code').disabled = false;
             document.getElementById('couponModal').style.display = 'flex';
         });
 
@@ -144,28 +148,24 @@
             }
         });
 
-        function editCoupon(code) {
+        async function editCoupon(code) {
             isEditing = true;
             document.getElementById('modalTitle').textContent = 'Edit Coupon';
-            document.getElementById('editCode').value = code;
-            // Fetch existing data (we already have it, but to be safe we could fetch again)
-            // For simplicity, we'll fill from the table row. Better: fetch from API.
-            // We'll do a quick fetch.
-            fetchWithAuth(`${API_BASE}/admin/coupons`).then(res => res.json()).then(coupons => {
-                const c = coupons.find(c => c.Code === code);
-                if (c) {
-                    document.getElementById('code').value = c.Code;
-                    document.getElementById('code').disabled = true; // can't change code
-                    document.getElementById('discountType').value = c['Discount Type'];
-                    document.getElementById('discountValue').value = c['Discount Value'];
-                    document.getElementById('expiryDate').value = c['Expiry Date'];
-                    document.getElementById('usageLimit').value = c['Usage Limit'];
-                    document.getElementById('active').value = c.Active;
-                    document.getElementById('couponModal').style.display = 'flex';
-                }
-            });
+            const res = await fetchWithAuth(`${API_BASE}/admin/coupons`);
+            const coupons = await res.json();
+            const c = coupons.find(c => c.Code === code);
+            if (c) {
+                document.getElementById('editCode').value = code;
+                document.getElementById('code').value = c.Code;
+                document.getElementById('code').disabled = true;
+                document.getElementById('discountType').value = c['Discount Type'];
+                document.getElementById('discountValue').value = c['Discount Value'];
+                document.getElementById('expiryDate').value = c['Expiry Date'];
+                document.getElementById('usageLimit').value = c['Usage Limit'];
+                document.getElementById('active').value = c.Active;
+                document.getElementById('couponModal').style.display = 'flex';
+            }
         }
-
         window.editCoupon = editCoupon;
 
         async function deleteCoupon(code) {
@@ -177,27 +177,19 @@
 
         document.getElementById('couponForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const code = document.getElementById('code').value.trim();
             const data = {
-                code: code,
+                code: document.getElementById('code').value.trim(),
                 discount_type: document.getElementById('discountType').value,
                 discount_value: document.getElementById('discountValue').value,
                 expiry_date: document.getElementById('expiryDate').value,
                 usage_limit: document.getElementById('usageLimit').value,
                 active: document.getElementById('active').value
             };
-
             if (isEditing) {
-                const originalCode = document.getElementById('editCode').value;
-                await fetchWithAuth(`${API_BASE}/admin/coupons/${originalCode}`, {
+                const orig = document.getElementById('editCode').value;
+                await fetchWithAuth(`${API_BASE}/admin/coupons/${orig}`, {
                     method: 'PUT',
-                    body: JSON.stringify({
-                        discount_type: data.discount_type,
-                        discount_value: data.discount_value,
-                        expiry_date: data.expiry_date,
-                        usage_limit: data.usage_limit,
-                        active: data.active
-                    })
+                    body: JSON.stringify(data)
                 });
             } else {
                 await fetchWithAuth(`${API_BASE}/admin/coupons`, {

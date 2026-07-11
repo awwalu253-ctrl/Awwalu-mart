@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Products - Admin</title>
+    <title>Manage Products</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="admin.css">
 </head>
@@ -23,8 +23,6 @@
             <h2>📦 Product Management</h2>
             <button id="createProductBtn" class="btn-primary">+ Add New Product</button>
         </div>
-
-        <!-- Products Table -->
         <div class="table-wrapper">
             <table id="productTable">
                 <thead>
@@ -48,7 +46,7 @@
         </div>
     </main>
 
-    <!-- Create/Edit Product Modal -->
+    <!-- Product Modal -->
     <div id="productModal" class="modal">
         <div class="modal-content modal-large">
             <span class="close" id="modalClose">&times;</span>
@@ -180,7 +178,7 @@
             document.getElementById('modalTitle').textContent = 'Edit Product';
             const res = await fetch(`${API_BASE}/products/${id}`);
             const p = await res.json();
-            if (!p || p.error) {
+            if (p.error) {
                 alert('Product not found');
                 return;
             }
@@ -200,10 +198,8 @@
 
         async function deleteProduct(id) {
             if (!confirm(`Delete product "${id}"? This cannot be undone.`)) return;
-            // We'll need a DELETE endpoint. For now, we'll use the admin endpoint.
-            // Actually, we need to add a DELETE endpoint in the backend.
-            // For now, we'll use a workaround: we'll call the admin endpoint to update stock to "No"
-            alert('Delete functionality coming soon. Set Stock to "No" to hide the product.');
+            await fetchWithAuth(`${API_BASE}/admin/products/${id}`, { method: 'DELETE' });
+            loadProducts();
         }
         window.deleteProduct = deleteProduct;
 
@@ -220,13 +216,20 @@
                 featured: document.getElementById('productFeatured').value
             };
 
-            // For now, we'll log the product to the console and alert.
-            // In the backend, we need to add POST /api/admin/products endpoint.
-            console.log('Product data:', data);
-            alert('Product management is coming soon! The product data has been logged to the console.');
+            if (isEditing) {
+                const id = document.getElementById('editProductId').value;
+                await fetchWithAuth(`${API_BASE}/admin/products/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(data)
+                });
+            } else {
+                await fetchWithAuth(`${API_BASE}/admin/products`, {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+            }
             document.getElementById('productModal').style.display = 'none';
-            // In the future, we'll call the API:
-            // await fetchWithAuth(`${API_BASE}/admin/products`, { method: 'POST', body: JSON.stringify(data) });
+            loadProducts();
         });
 
         document.getElementById('logoutBtn').addEventListener('click', async () => {

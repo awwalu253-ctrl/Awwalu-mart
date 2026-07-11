@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,13 +7,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="admin.css">
 </head>
-
 <body>
     <nav class="admin-nav">
         <h1>🛠️ Admin Panel</h1>
-        <a href="/admin/dashboard.html" class="active">Dashboard</a>
-        <a href="/admin/coupons.html">Coupons</a>
-        <a href="/admin/orders.html">Orders</a>
+        <div>
+            <a href="/admin/dashboard.html" class="active">Dashboard</a>
+            <a href="/admin/products.html">Products</a>
+            <a href="/admin/coupons.html">Coupons</a>
+            <a href="/admin/orders.html">Orders</a>
+            <button id="logoutBtn">Logout</button>
+        </div>
     </nav>
     <main class="admin-main">
         <h2>Dashboard</h2>
@@ -30,32 +32,39 @@
                 </label>
                 <span id="maintenanceStatus">Off</span>
             </div>
+            <p class="toggle-hint">When enabled, the main website will show a maintenance page.</p>
         </div>
     </main>
     <script>
         const API_BASE = window.location.origin + '/api';
         const token = localStorage.getItem('adminToken');
-        if (!token) window.location.href = 'index.html';
+        if (!token) window.location.href = '/admin/index.html';
 
         async function fetchWithAuth(url, options = {}) {
             const res = await fetch(url, {
                 ...options,
-                headers: { ...options.headers, 'Authorization': `Bearer ${token}` }
+                headers: {
+                    ...options.headers,
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
             });
             if (res.status === 401) {
                 localStorage.removeItem('adminToken');
-                window.location.href = 'index.html';
+                window.location.href = '/admin/index.html';
             }
             return res;
         }
 
         async function loadStats() {
             try {
-                const ordersRes = await fetchWithAuth(`${API_BASE}/admin/orders`);
+                const [ordersRes, couponsRes, maintRes] = await Promise.all([
+                    fetchWithAuth(`${API_BASE}/admin/orders`),
+                    fetchWithAuth(`${API_BASE}/admin/coupons`),
+                    fetchWithAuth(`${API_BASE}/admin/maintenance`)
+                ]);
                 const orders = await ordersRes.json();
-                const couponsRes = await fetchWithAuth(`${API_BASE}/admin/coupons`);
                 const coupons = await couponsRes.json();
-                const maintRes = await fetchWithAuth(`${API_BASE}/admin/maintenance`);
                 const maint = await maintRes.json();
 
                 document.getElementById('stats').innerHTML = `
@@ -63,14 +72,14 @@
                     <div class="stat-card"><span>🏷️ Active Coupons</span><strong>${coupons.filter(c => c.Active === 'Yes').length}</strong></div>
                     <div class="stat-card"><span>⚙️ Maintenance</span><strong>${maint.maintenance_mode === 'Yes' ? '🔴 ON' : '🟢 OFF'}</strong></div>
                 `;
-                document.getElementById('maintenanceToggle').checked = maint.maintenance_mode === 'Yes';
+                const toggle = document.getElementById('maintenanceToggle');
+                toggle.checked = maint.maintenance_mode === 'Yes';
                 updateStatusText();
 
-                document.getElementById('maintenanceToggle').addEventListener('change', async (e) => {
+                toggle.addEventListener('change', async (e) => {
                     const mode = e.target.checked ? 'Yes' : 'No';
                     await fetchWithAuth(`${API_BASE}/admin/maintenance`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ mode })
                     });
                     updateStatusText();
@@ -88,11 +97,10 @@
         document.getElementById('logoutBtn').addEventListener('click', async () => {
             await fetchWithAuth(`${API_BASE}/admin/logout`, { method: 'POST' });
             localStorage.removeItem('adminToken');
-            window.location.href = 'index.html';
+            window.location.href = '/admin/index.html';
         });
 
         loadStats();
     </script>
 </body>
-
 </html>
