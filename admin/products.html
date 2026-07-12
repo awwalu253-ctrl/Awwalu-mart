@@ -130,7 +130,6 @@
         let isEditing = false;
         let allProducts = [];
 
-        // ---------- Fetch with Auth ----------
         async function fetchWithAuth(url, options = {}) {
             const res = await fetch(url, {
                 ...options,
@@ -146,7 +145,6 @@
             return res;
         }
 
-        // ---------- Load Products ----------
         async function loadProducts() {
             try {
                 const res = await fetch(`${API_BASE}/products`);
@@ -179,7 +177,6 @@
             }
         }
 
-        // ---------- Generate Next ID ----------
         function generateNextProductId() {
             if (!allProducts || allProducts.length === 0) return 'prod_001';
             const ids = allProducts.map(p => p.id);
@@ -195,7 +192,6 @@
             return `prod_${String(nextNum).padStart(3, '0')}`;
         }
 
-        // ---------- Open Create Modal ----------
         document.getElementById('createProductBtn').addEventListener('click', () => {
             isEditing = false;
             document.getElementById('modalTitle').textContent = 'Add New Product';
@@ -206,7 +202,6 @@
             document.getElementById('productModal').style.display = 'flex';
         });
 
-        // ---------- Close Modal ----------
         document.getElementById('modalClose').addEventListener('click', () => {
             document.getElementById('productModal').style.display = 'none';
         });
@@ -216,7 +211,6 @@
             }
         });
 
-        // ---------- Edit Product ----------
         async function editProduct(id) {
             isEditing = true;
             document.getElementById('modalTitle').textContent = 'Edit Product';
@@ -245,7 +239,6 @@
         }
         window.editProduct = editProduct;
 
-        // ---------- Delete Product ----------
         async function deleteProduct(id) {
             if (!confirm(`Delete product "${id}"? This cannot be undone.`)) return;
             try {
@@ -302,7 +295,7 @@
             }
         });
 
-        // ---------- Submit Form (with full debugging) ----------
+        // ---------- Submit Form (Robust Error Handling) ----------
         document.getElementById('productForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -332,13 +325,10 @@
                     });
                 }
 
-                // --- DEBUG: log everything ---
-                console.log('Response status:', res.status);
-                console.log('Response headers:', res.headers);
-
-                // Read raw text first
+                // Read raw text for debugging
                 const rawText = await res.text();
-                console.log('Raw response body:', rawText);
+                console.log('Response status:', res.status);
+                console.log('Raw response:', rawText);
 
                 let responseData = null;
                 let errorMsg = '';
@@ -347,24 +337,19 @@
                 try {
                     responseData = JSON.parse(rawText);
                 } catch (e) {
-                    // Not JSON – use raw text
-                    errorMsg = rawText || 'Unknown error';
+                    errorMsg = rawText || 'Unknown error (not JSON)';
                 }
 
                 if (!res.ok) {
-                    // If we have JSON, extract detail
+                    // Extract error message from JSON if possible
                     if (responseData && typeof responseData === 'object') {
                         errorMsg = responseData.detail || responseData.message || JSON.stringify(responseData);
                     } else if (!errorMsg) {
                         errorMsg = `Server error (${res.status})`;
                     }
-                    alert(`❌ Error: ${errorMsg}`);
-                    console.error('Error details:', {
-                        status: res.status,
-                        headers: res.headers,
-                        body: rawText,
-                        parsed: responseData
-                    });
+                    // Ensure errorMsg is a string
+                    alert('❌ Error: ' + String(errorMsg));
+                    console.error('Error details:', { status: res.status, body: rawText, parsed: responseData });
                     return;
                 }
 
@@ -378,14 +363,12 @@
             }
         });
 
-        // ---------- Logout ----------
         document.getElementById('logoutBtn').addEventListener('click', async () => {
             await fetchWithAuth(`${API_BASE}/admin/logout`, { method: 'POST' });
             localStorage.removeItem('adminToken');
             window.location.href = '/admin/index.html';
         });
 
-        // ---------- Init ----------
         loadProducts();
     </script>
 </body>
