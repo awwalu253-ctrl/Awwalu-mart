@@ -56,7 +56,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Product ID <span class="required">*</span></label>
-                        <input type="text" id="productId" placeholder="e.g. prod_001" required>
+                        <input type="text" id="productId" placeholder="Auto-generated" readonly required>
                     </div>
                     <div class="form-group">
                         <label>Product Name <span class="required">*</span></label>
@@ -128,6 +128,7 @@
         if (!token) window.location.href = '/admin/index.html';
 
         let isEditing = false;
+        let allProducts = [];
 
         async function fetchWithAuth(url, options = {}) {
             const res = await fetch(url, {
@@ -144,9 +145,11 @@
             return res;
         }
 
+        // ---------- Load Products and Cache ----------
         async function loadProducts() {
             const res = await fetch(`${API_BASE}/products`);
             const products = await res.json();
+            allProducts = products;
             const tbody = document.getElementById('productList');
             if (!products.length) {
                 tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#8a8078;">No products found.</td></tr>';
@@ -169,7 +172,83 @@
             `).join('');
         }
 
-        // ---------- IMAGE UPLOAD ----------
+        // ---------- Generate Next Product ID ----------
+        function generateNextProductId() {
+            // If no products, start with prod_001
+            if (!allProducts || allProducts.length === 0) {
+                return 'prod_001';
+            }
+            // Extract numeric suffixes
+            const ids = allProducts.map(p => p.id);
+            let maxNum = 0;
+            ids.forEach(id => {
+                const match = id.match(/prod_(\d+)/);
+                if (match) {
+                    const num = parseInt(match[1], 10);
+                    if (num > maxNum) maxNum = num;
+                }
+            });
+            const nextNum = maxNum + 1;
+            return `prod_${String(nextNum).padStart(3, '0')}`;
+        }
+
+        // ---------- Open Create Product Modal ----------
+        document.getElementById('createProductBtn').addEventListener('click', () => {
+            isEditing = false;
+            document.getElementById('modalTitle').textContent = 'Add New Product';
+            document.getElementById('productForm').reset();
+            document.getElementById('editProductId').value = '';
+            document.getElementById('productId').disabled = false;
+            // Auto-generate product ID
+            document.getElementById('productId').value = generateNextProductId();
+            // Make it read-only (so admin can't change it)
+            document.getElementById('productId').readOnly = true;
+            document.getElementById('productModal').style.display = 'flex';
+        });
+
+        // ---------- Close Modal ----------
+        document.getElementById('modalClose').addEventListener('click', () => {
+            document.getElementById('productModal').style.display = 'none';
+        });
+        window.addEventListener('click', (e) => {
+            if (e.target === document.getElementById('productModal')) {
+                document.getElementById('productModal').style.display = 'none';
+            }
+        });
+
+        // ---------- Edit Product ----------
+        async function editProduct(id) {
+            isEditing = true;
+            document.getElementById('modalTitle').textContent = 'Edit Product';
+            const res = await fetch(`${API_BASE}/products/${id}`);
+            const p = await res.json();
+            if (p.error) {
+                alert('Product not found');
+                return;
+            }
+            document.getElementById('editProductId').value = id;
+            document.getElementById('productId').value = p.id;
+            document.getElementById('productId').readOnly = true;  // keep read-only
+            document.getElementById('productName').value = p.name;
+            document.getElementById('productPrice').value = p.price;
+            document.getElementById('productCategory').value = p.category || 'Cookware';
+            document.getElementById('productImage').value = p.image;
+            document.getElementById('productDescription').value = p.description || '';
+            document.getElementById('productStock').value = p.stock || 'Yes';
+            document.getElementById('productFeatured').value = p.featured ? 'Yes' : 'No';
+            document.getElementById('productModal').style.display = 'flex';
+        }
+        window.editProduct = editProduct;
+
+        // ---------- Delete Product ----------
+        async function deleteProduct(id) {
+            if (!confirm(`Delete product "${id}"? This cannot be undone.`)) return;
+            await fetchWithAuth(`${API_BASE}/admin/products/${id}`, { method: 'DELETE' });
+            loadProducts();
+        }
+        window.deleteProduct = deleteProduct;
+
+        // ---------- Image Upload ----------
         document.getElementById('uploadImageBtn').addEventListener('click', async function() {
             const fileInput = document.getElementById('imageUpload');
             const file = fileInput.files[0];
@@ -213,55 +292,7 @@
             }
         });
 
-        // ---------- CRUD ----------
-        document.getElementById('createProductBtn').addEventListener('click', () => {
-            isEditing = false;
-            document.getElementById('modalTitle').textContent = 'Add New Product';
-            document.getElementById('productForm').reset();
-            document.getElementById('editProductId').value = '';
-            document.getElementById('productId').disabled = false;
-            document.getElementById('productModal').style.display = 'flex';
-        });
-
-        document.getElementById('modalClose').addEventListener('click', () => {
-            document.getElementById('productModal').style.display = 'none';
-        });
-        window.addEventListener('click', (e) => {
-            if (e.target === document.getElementById('productModal')) {
-                document.getElementById('productModal').style.display = 'none';
-            }
-        });
-
-        async function editProduct(id) {
-            isEditing = true;
-            document.getElementById('modalTitle').textContent = 'Edit Product';
-            const res = await fetch(`${API_BASE}/products/${id}`);
-            const p = await res.json();
-            if (p.error) {
-                alert('Product not found');
-                return;
-            }
-            document.getElementById('editProductId').value = id;
-            document.getElementById('productId').value = p.id;
-            document.getElementById('productId').disabled = true;
-            document.getElementById('productName').value = p.name;
-            document.getElementById('productPrice').value = p.price;
-            document.getElementById('productCategory').value = p.category || 'Cookware';
-            document.getElementById('productImage').value = p.image;
-            document.getElementById('productDescription').value = p.description || '';
-            document.getElementById('productStock').value = p.stock || 'Yes';
-            document.getElementById('productFeatured').value = p.featured ? 'Yes' : 'No';
-            document.getElementById('productModal').style.display = 'flex';
-        }
-        window.editProduct = editProduct;
-
-        async function deleteProduct(id) {
-            if (!confirm(`Delete product "${id}"? This cannot be undone.`)) return;
-            await fetchWithAuth(`${API_BASE}/admin/products/${id}`, { method: 'DELETE' });
-            loadProducts();
-        }
-        window.deleteProduct = deleteProduct;
-
+        // ---------- Submit Form ----------
         document.getElementById('productForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const data = {
@@ -291,12 +322,14 @@
             loadProducts();
         });
 
+        // ---------- Logout ----------
         document.getElementById('logoutBtn').addEventListener('click', async () => {
             await fetchWithAuth(`${API_BASE}/admin/logout`, { method: 'POST' });
             localStorage.removeItem('adminToken');
             window.location.href = '/admin/index.html';
         });
 
+        // ---------- Init ----------
         loadProducts();
     </script>
 </body>
