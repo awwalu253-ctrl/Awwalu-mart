@@ -96,7 +96,7 @@ def increment_coupon_usage(code: str) -> bool:
         for i, row in enumerate(records, start=2):
             if row.get("Code") == code:
                 current = int(row.get("Used Count") or 0)
-                sheet.update_cell(i, 6, current + 1)
+                sheet.update_cell(i, 6, current + 1)  # Column 6 = Used Count
                 print(f"Incremented coupon {code} from {current} to {current+1}")
                 return True
         return False
@@ -278,13 +278,16 @@ async def validate_coupon(code: str, total: float = 0):
                             return {"valid": False, "reason": "Coupon has expired"}
                     except:
                         pass
+
                 used = int(row.get("Used Count") or 0)
                 limit = int(row.get("Usage Limit") or 0)
-                if limit > 0 and used >= limit:
+                # If limit is 0, treat as "no uses allowed" (blocked)
+                if limit == 0 or (limit > 0 and used >= limit):
                     return {
                         "valid": False,
-                        "reason": f"Coupon usage limit reached ({used}/{limit} used)"
+                        "reason": f"Coupon usage limit reached" if limit == 0 else f"Coupon usage limit reached ({used}/{limit} used)"
                     }
+
                 min_order = float(row.get("Min Order Amount") or 0)
                 if min_order > 0 and total < min_order:
                     return {
@@ -492,10 +495,6 @@ async def get_product_by_id(product_id: str):
 @app.get("/api/bundles")
 async def get_all_bundles():
     return get_bundles()
-
-@app.post("/api/test-product")
-async def test_product(data: dict):
-    return {"received": data}
 
 @app.get("/api/bundles/{bundle_id}")
 async def get_bundle_by_id(bundle_id: str):
