@@ -350,6 +350,7 @@ async def log_order(data: dict):
             data.get("phone", ""),
             data.get("address", ""),
             data.get("items", ""),
+            data.get("product_ids", ""),   # <-- NEW: store product IDs
             data.get("total", "0"),
             "Pending",
             data.get("coupon_code", "")

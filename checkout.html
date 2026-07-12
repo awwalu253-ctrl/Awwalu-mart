@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -14,17 +15,20 @@
             margin: 16px 0 24px;
             border: 1px solid #f0ebe4;
         }
+
         .coupon-section h3 {
             font-size: 16px;
             font-weight: 600;
             margin-bottom: 8px;
             color: #2d2a24;
         }
+
         .coupon-input-group {
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
         }
+
         .coupon-input-group input {
             flex: 1;
             padding: 10px 16px;
@@ -34,10 +38,12 @@
             background: #fff;
             min-width: 150px;
         }
+
         .coupon-input-group input:focus {
             outline: none;
             border-color: #b8860b;
         }
+
         .coupon-input-group .btn-sm {
             padding: 10px 20px;
             font-size: 14px;
@@ -53,25 +59,39 @@
             min-width: 80px;
             justify-content: center;
         }
+
         .coupon-input-group .btn-sm:hover {
             background: #d4a22a;
         }
+
         .coupon-input-group .btn-sm:disabled {
             opacity: 0.6;
             cursor: not-allowed;
         }
+
         .coupon-input-group .btn-sm .spinner {
             animation: spin 1s linear infinite;
         }
+
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
+
         .coupon-message {
             margin-top: 8px;
             font-size: 14px;
         }
-        .coupon-message.success { color: #065f46; }
-        .coupon-message.error { color: #991b1b; }
+
+        .coupon-message.success {
+            color: #065f46;
+        }
+
+        .coupon-message.error {
+            color: #991b1b;
+        }
+
         .discount-display {
             margin-top: 8px;
             font-weight: 600;
@@ -79,6 +99,7 @@
             display: none;
             justify-content: space-between;
         }
+
         .checkout-total-final {
             display: flex;
             justify-content: space-between;
@@ -90,9 +111,13 @@
             font-weight: 700;
             color: #2d2a24;
         }
-        .checkout-total-final span:last-child { color: #b8860b; }
+
+        .checkout-total-final span:last-child {
+            color: #b8860b;
+        }
     </style>
 </head>
+
 <body>
     <nav class="navbar" id="navbar"></nav>
 
@@ -103,7 +128,10 @@
                 <!-- Order Summary -->
                 <div class="checkout-summary">
                     <h3><i class="fas fa-shopping-cart"></i> Your Order</h3>
-                    <div id="checkoutItems"><p style="color:#8a8078; text-align:center; padding:20px 0;"><i class="fas fa-spinner spinner"></i> Loading...</p></div>
+                    <div id="checkoutItems">
+                        <p style="color:#8a8078; text-align:center; padding:20px 0;"><i
+                                class="fas fa-spinner spinner"></i> Loading...</p>
+                    </div>
                     <div class="checkout-total" id="checkoutTotalWrap">
                         <span>Total:</span>
                         <span id="checkoutTotal">₦0.00</span>
@@ -147,7 +175,8 @@
                         </div>
                         <div class="form-group">
                             <label for="deliveryAddress">Delivery Address <span class="required">*</span></label>
-                            <textarea id="deliveryAddress" rows="3" placeholder="Enter your full delivery address" required></textarea>
+                            <textarea id="deliveryAddress" rows="3" placeholder="Enter your full delivery address"
+                                required></textarea>
                         </div>
                         <div class="form-group">
                             <label for="deliveryNotes">Delivery Notes (Optional)</label>
@@ -226,7 +255,7 @@
             let html = '', total = 0;
             orderItems.forEach(item => {
                 const qty = item.quantity || 1;
-                const price = parseFloat(item.price.replace(/[^0-9.]/g,'') || 0);
+                const price = parseFloat(item.price.replace(/[^0-9.]/g, '') || 0);
                 total += price * qty;
                 html += `
                     <div class="checkout-item">
@@ -247,7 +276,7 @@
         }
 
         // Coupon apply with spinner
-        applyCouponBtn.addEventListener('click', async function() {
+        applyCouponBtn.addEventListener('click', async function () {
             const code = couponCodeInput.value.trim();
             if (!code) {
                 showToast('Please enter a coupon code.');
@@ -303,7 +332,7 @@
             }
         });
 
-        document.getElementById('checkoutForm').addEventListener('submit', function(e) {
+        document.getElementById('checkoutForm').addEventListener('submit', function (e) {
             e.preventDefault();
             const fullName = document.getElementById('fullName').value.trim();
             const phoneNumber = document.getElementById('phoneNumber').value.trim();
@@ -329,7 +358,7 @@
             let subtotal = 0;
             orderItems.forEach(item => {
                 const qty = item.quantity || 1;
-                const price = parseFloat(item.price.replace(/[^0-9.]/g,'') || 0);
+                const price = parseFloat(item.price.replace(/[^0-9.]/g, '') || 0);
                 subtotal += price * qty;
                 message += `- ${item.name} (${item.price}) × ${qty}%0A`;
             });
@@ -345,12 +374,14 @@
             const url = `https://wa.me/${whatsappNumber}?text=${message}`;
             window.open(url, '_blank');
 
-            // Log order
+            // Build order data with product IDs
+            const productIds = orderItems.map(item => item.id).join(', ');
             const orderData = {
                 customer_name: fullName,
                 phone: phoneNumber,
                 address: deliveryAddress,
                 items: orderItems.map(i => `${i.name} × ${i.quantity || 1}`).join(', '),
+                product_ids: productIds,
                 total: total.toFixed(2),
                 coupon_code: appliedCoupon ? appliedCoupon.code : null
             };
@@ -372,4 +403,5 @@
         document.getElementById('fullName').focus();
     </script>
 </body>
+
 </html>

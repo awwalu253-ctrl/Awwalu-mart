@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="admin.css">
 </head>
+
 <body>
     <nav class="admin-nav">
         <h1>🛠️ Admin Panel</h1>
@@ -30,15 +32,18 @@
                         <th>Phone</th>
                         <th>Address</th>
                         <th>Items</th>
+                        <th>Product IDs</th>
                         <th>Total</th>
                         <th>Coupon</th>
                         <th>Status</th>
                     </tr>
                 </thead>
                 <tbody id="orderList">
-                    <tr><td colspan="9" style="text-align:center; padding:40px; color:#8a8078;">
-                        <i class="fas fa-spinner spinner"></i> Loading orders...
-                    </td></tr>
+                    <tr>
+                        <td colspan="9" style="text-align:center; padding:40px; color:#8a8078;">
+                            <i class="fas fa-spinner spinner"></i> Loading orders...
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -70,18 +75,19 @@
                     return;
                 }
                 tbody.innerHTML = orders.map(o => `
-                    <tr>
-                        <td>${o['Order ID'] || '-'}</td>
-                        <td>${o['Date'] || '-'}</td>
-                        <td>${o['Customer Name'] || '-'}</td>
-                        <td>${o['Phone'] || '-'}</td>
-                        <td>${o['Address'] || '-'}</td>
-                        <td>${o['Items'] || '-'}</td>
-                        <td>₦${o['Total'] || '0'}</td>
-                        <td>${o['Coupon'] || '—'}</td>
-                        <td><span class="status-badge ${(o['Status'] || 'Pending').toLowerCase()}">${o['Status'] || 'Pending'}</span></td>
-                    </tr>
-                `).join('');
+                <tr>
+                    <td>${o['Order ID'] || '-'}</td>
+                    <td>${o['Date'] || '-'}</td>
+                    <td>${o['Customer Name'] || '-'}</td>
+                    <td>${o['Phone'] || '-'}</td>
+                    <td>${o['Address'] || '-'}</td>
+                    <td>${o['Items'] || '-'}</td>
+                    <td>${o['Product IDs'] || '-'}</td>
+                    <td>₦${o['Total'] || '0'}</td>
+                    <td>${o['Coupon'] || '—'}</td>
+                    <td><span class="status-badge ${(o['Status'] || 'Pending').toLowerCase()}">${o['Status'] || 'Pending'}</span></td>
+                </tr>
+            `).join('');
             } catch (error) {
                 console.error('Error loading orders:', error);
                 document.getElementById('orderList').innerHTML = `<tr><td colspan="9" style="text-align:center; color:#991b1b;">Failed to load orders.</td></tr>`;
@@ -97,4 +103,5 @@
         loadOrders();
     </script>
 </body>
+
 </html>
