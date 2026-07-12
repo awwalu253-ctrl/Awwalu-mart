@@ -130,6 +130,7 @@
         let isEditing = false;
         let allProducts = [];
 
+        // ---------- Fetch with Auth ----------
         async function fetchWithAuth(url, options = {}) {
             const res = await fetch(url, {
                 ...options,
@@ -145,7 +146,7 @@
             return res;
         }
 
-        // ---------- Load Products and Cache ----------
+        // ---------- Load Products ----------
         async function loadProducts() {
             try {
                 const res = await fetch(`${API_BASE}/products`);
@@ -178,11 +179,9 @@
             }
         }
 
-        // ---------- Generate Next Product ID ----------
+        // ---------- Generate Next ID ----------
         function generateNextProductId() {
-            if (!allProducts || allProducts.length === 0) {
-                return 'prod_001';
-            }
+            if (!allProducts || allProducts.length === 0) return 'prod_001';
             const ids = allProducts.map(p => p.id);
             let maxNum = 0;
             ids.forEach(id => {
@@ -196,7 +195,7 @@
             return `prod_${String(nextNum).padStart(3, '0')}`;
         }
 
-        // ---------- Open Create Product Modal ----------
+        // ---------- Open Create Modal ----------
         document.getElementById('createProductBtn').addEventListener('click', () => {
             isEditing = false;
             document.getElementById('modalTitle').textContent = 'Add New Product';
@@ -303,9 +302,10 @@
             }
         });
 
-        // ---------- Submit Form ----------
+        // ---------- Submit Form (Robust Error Handling) ----------
         document.getElementById('productForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+
             const data = {
                 id: document.getElementById('productId').value.trim(),
                 name: document.getElementById('productName').value.trim(),
@@ -332,20 +332,35 @@
                     });
                 }
 
+                // Read response body once
+                const rawText = await res.text();
+                let responseData = null;
+                let errorMsg = '';
+
+                // Try to parse as JSON
+                try {
+                    responseData = JSON.parse(rawText);
+                } catch (e) {
+                    errorMsg = rawText || 'Unknown error';
+                }
+
                 if (!res.ok) {
-                    let errorMsg = '';
-                    const contentType = res.headers.get('content-type');
-                    if (contentType && contentType.includes('application/json')) {
-                        const errorData = await res.json();
-                        errorMsg = errorData.detail || JSON.stringify(errorData);
-                    } else {
-                        errorMsg = await res.text();
+                    // If JSON, extract detail
+                    if (responseData && typeof responseData === 'object') {
+                        errorMsg = responseData.detail || JSON.stringify(responseData);
+                    } else if (!errorMsg) {
+                        errorMsg = `Server error (${res.status})`;
                     }
                     alert(`❌ Error: ${errorMsg}`);
-                    console.error('Error response:', errorMsg);
+                    console.error('Error response:', {
+                        status: res.status,
+                        headers: res.headers,
+                        body: rawText
+                    });
                     return;
                 }
 
+                // Success
                 document.getElementById('productModal').style.display = 'none';
                 loadProducts();
                 alert('✅ Product saved successfully!');
