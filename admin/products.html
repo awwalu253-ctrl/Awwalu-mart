@@ -295,7 +295,7 @@
             }
         });
 
-        // ---------- Submit Form (Robust Error Handling) ----------
+        // ---------- Submit Form (with Content-Type fix) ----------
         document.getElementById('productForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -316,16 +316,17 @@
                     const id = document.getElementById('editProductId').value;
                     res = await fetchWithAuth(`${API_BASE}/admin/products/${id}`, {
                         method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(data)
                     });
                 } else {
                     res = await fetchWithAuth(`${API_BASE}/admin/products`, {
                         method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(data)
                     });
                 }
 
-                // Read raw text for debugging
                 const rawText = await res.text();
                 console.log('Response status:', res.status);
                 console.log('Raw response:', rawText);
@@ -333,7 +334,6 @@
                 let responseData = null;
                 let errorMsg = '';
 
-                // Try to parse as JSON
                 try {
                     responseData = JSON.parse(rawText);
                 } catch (e) {
@@ -341,19 +341,16 @@
                 }
 
                 if (!res.ok) {
-                    // Extract error message from JSON if possible
                     if (responseData && typeof responseData === 'object') {
                         errorMsg = responseData.detail || responseData.message || JSON.stringify(responseData);
                     } else if (!errorMsg) {
                         errorMsg = `Server error (${res.status})`;
                     }
-                    // Ensure errorMsg is a string
                     alert('❌ Error: ' + String(errorMsg));
                     console.error('Error details:', { status: res.status, body: rawText, parsed: responseData });
                     return;
                 }
 
-                // Success
                 document.getElementById('productModal').style.display = 'none';
                 loadProducts();
                 alert('✅ Product saved successfully!');
