@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +7,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="admin.css">
 </head>
-
 <body>
     <nav class="admin-nav">
         <h1>🛠️ Admin Panel</h1>
@@ -40,11 +38,9 @@
                     </tr>
                 </thead>
                 <tbody id="productList">
-                    <tr>
-                        <td colspan="8" style="text-align:center; padding:40px; color:#8a8078;">
-                            <i class="fas fa-spinner spinner"></i> Loading products...
-                        </td>
-                    </tr>
+                    <tr><td colspan="8" style="text-align:center; padding:40px; color:#8a8078;">
+                        <i class="fas fa-spinner spinner"></i> Loading products...
+                    </td></tr>
                 </tbody>
             </table>
         </div>
@@ -96,9 +92,7 @@
                         </div>
                         <div id="uploadProgress" style="display:none; margin-top:8px;">
                             <span style="font-size:13px; color:#8a8078;">Uploading...</span>
-                            <div class="progress-bar">
-                                <div class="progress-fill" id="uploadProgressFill" style="width:0%;"></div>
-                            </div>
+                            <div class="progress-bar"><div class="progress-fill" id="uploadProgressFill" style="width:0%;"></div></div>
                         </div>
                     </div>
                 </div>
@@ -153,38 +147,42 @@
 
         // ---------- Load Products and Cache ----------
         async function loadProducts() {
-            const res = await fetch(`${API_BASE}/products`);
-            const products = await res.json();
-            allProducts = products;
-            const tbody = document.getElementById('productList');
-            if (!products.length) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#8a8078;">No products found.</td></tr>';
-                return;
+            try {
+                const res = await fetch(`${API_BASE}/products`);
+                if (!res.ok) throw new Error('Failed to fetch products');
+                const products = await res.json();
+                allProducts = products;
+                const tbody = document.getElementById('productList');
+                if (!products.length) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#8a8078;">No products found.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = products.map(p => `
+                    <tr>
+                        <td><code>${p.id}</code></td>
+                        <td><img src="${p.image}" alt="${p.name}" style="width:50px; height:50px; object-fit:cover; border-radius:8px;" onerror="this.style.display='none'"></td>
+                        <td><strong>${p.name}</strong></td>
+                        <td>${p.price}</td>
+                        <td><span class="category-badge">${p.category}</span></td>
+                        <td><span class="stock-badge ${p.stock === 'Yes' ? 'in-stock' : 'out-of-stock'}">${p.stock || 'Yes'}</span></td>
+                        <td>${p.featured ? '⭐' : '—'}</td>
+                        <td>
+                            <button class="btn-primary btn-sm" onclick="editProduct('${p.id}')">Edit</button>
+                            <button class="btn-danger btn-sm" onclick="deleteProduct('${p.id}')">Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading products:', error);
+                document.getElementById('productList').innerHTML = `<tr><td colspan="8" style="text-align:center; color:#991b1b;">Failed to load products.</td></tr>`;
             }
-            tbody.innerHTML = products.map(p => `
-                <tr>
-                    <td><code>${p.id}</code></td>
-                    <td><img src="${p.image}" alt="${p.name}" style="width:50px; height:50px; object-fit:cover; border-radius:8px;" onerror="this.style.display='none'"></td>
-                    <td><strong>${p.name}</strong></td>
-                    <td>${p.price}</td>
-                    <td><span class="category-badge">${p.category}</span></td>
-                    <td><span class="stock-badge ${p.stock === 'Yes' ? 'in-stock' : 'out-of-stock'}">${p.stock || 'Yes'}</span></td>
-                    <td>${p.featured ? '⭐' : '—'}</td>
-                    <td>
-                        <button class="btn-primary btn-sm" onclick="editProduct('${p.id}')">Edit</button>
-                        <button class="btn-danger btn-sm" onclick="deleteProduct('${p.id}')">Delete</button>
-                    </td>
-                </tr>
-            `).join('');
         }
 
         // ---------- Generate Next Product ID ----------
         function generateNextProductId() {
-            // If no products, start with prod_001
             if (!allProducts || allProducts.length === 0) {
                 return 'prod_001';
             }
-            // Extract numeric suffixes
             const ids = allProducts.map(p => p.id);
             let maxNum = 0;
             ids.forEach(id => {
@@ -204,10 +202,7 @@
             document.getElementById('modalTitle').textContent = 'Add New Product';
             document.getElementById('productForm').reset();
             document.getElementById('editProductId').value = '';
-            document.getElementById('productId').disabled = false;
-            // Auto-generate product ID
             document.getElementById('productId').value = generateNextProductId();
-            // Make it read-only (so admin can't change it)
             document.getElementById('productId').readOnly = true;
             document.getElementById('productModal').style.display = 'flex';
         });
@@ -226,36 +221,46 @@
         async function editProduct(id) {
             isEditing = true;
             document.getElementById('modalTitle').textContent = 'Edit Product';
-            const res = await fetch(`${API_BASE}/products/${id}`);
-            const p = await res.json();
-            if (p.error) {
-                alert('Product not found');
-                return;
+            try {
+                const res = await fetch(`${API_BASE}/products/${id}`);
+                if (!res.ok) throw new Error('Product not found');
+                const p = await res.json();
+                if (p.error) {
+                    alert('Product not found');
+                    return;
+                }
+                document.getElementById('editProductId').value = id;
+                document.getElementById('productId').value = p.id;
+                document.getElementById('productId').readOnly = true;
+                document.getElementById('productName').value = p.name;
+                document.getElementById('productPrice').value = p.price;
+                document.getElementById('productCategory').value = p.category || 'Cookware';
+                document.getElementById('productImage').value = p.image;
+                document.getElementById('productDescription').value = p.description || '';
+                document.getElementById('productStock').value = p.stock || 'Yes';
+                document.getElementById('productFeatured').value = p.featured ? 'Yes' : 'No';
+                document.getElementById('productModal').style.display = 'flex';
+            } catch (error) {
+                alert('Error loading product: ' + error.message);
             }
-            document.getElementById('editProductId').value = id;
-            document.getElementById('productId').value = p.id;
-            document.getElementById('productId').readOnly = true;  // keep read-only
-            document.getElementById('productName').value = p.name;
-            document.getElementById('productPrice').value = p.price;
-            document.getElementById('productCategory').value = p.category || 'Cookware';
-            document.getElementById('productImage').value = p.image;
-            document.getElementById('productDescription').value = p.description || '';
-            document.getElementById('productStock').value = p.stock || 'Yes';
-            document.getElementById('productFeatured').value = p.featured ? 'Yes' : 'No';
-            document.getElementById('productModal').style.display = 'flex';
         }
         window.editProduct = editProduct;
 
         // ---------- Delete Product ----------
         async function deleteProduct(id) {
             if (!confirm(`Delete product "${id}"? This cannot be undone.`)) return;
-            await fetchWithAuth(`${API_BASE}/admin/products/${id}`, { method: 'DELETE' });
-            loadProducts();
+            try {
+                const res = await fetchWithAuth(`${API_BASE}/admin/products/${id}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error('Delete failed');
+                loadProducts();
+            } catch (error) {
+                alert('Error deleting product: ' + error.message);
+            }
         }
         window.deleteProduct = deleteProduct;
 
         // ---------- Image Upload ----------
-        document.getElementById('uploadImageBtn').addEventListener('click', async function () {
+        document.getElementById('uploadImageBtn').addEventListener('click', async function() {
             const fileInput = document.getElementById('imageUpload');
             const file = fileInput.files[0];
             if (!file) {
@@ -301,7 +306,16 @@
         // ---------- Submit Form ----------
         document.getElementById('productForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const data = { /* ... */ };
+            const data = {
+                id: document.getElementById('productId').value.trim(),
+                name: document.getElementById('productName').value.trim(),
+                price: document.getElementById('productPrice').value.trim(),
+                category: document.getElementById('productCategory').value,
+                image: document.getElementById('productImage').value.trim(),
+                description: document.getElementById('productDescription').value.trim(),
+                stock: document.getElementById('productStock').value,
+                featured: document.getElementById('productFeatured').value
+            };
 
             try {
                 let res;
@@ -319,15 +333,25 @@
                 }
 
                 if (!res.ok) {
-                    const errorData = await res.json();
-                    alert(`Error: ${errorData.detail || 'Unknown error'}`);
+                    let errorMsg = '';
+                    const contentType = res.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        const errorData = await res.json();
+                        errorMsg = errorData.detail || JSON.stringify(errorData);
+                    } else {
+                        errorMsg = await res.text();
+                    }
+                    alert(`❌ Error: ${errorMsg}`);
+                    console.error('Error response:', errorMsg);
                     return;
                 }
 
                 document.getElementById('productModal').style.display = 'none';
                 loadProducts();
+                alert('✅ Product saved successfully!');
             } catch (error) {
-                alert('Failed to save product: ' + error.message);
+                alert('❌ Network error: ' + error.message);
+                console.error('Network error:', error);
             }
         });
 
@@ -342,5 +366,4 @@
         loadProducts();
     </script>
 </body>
-
 </html>

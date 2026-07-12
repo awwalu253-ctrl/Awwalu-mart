@@ -90,7 +90,6 @@ def update_config(setting, value):
         print(f"Error updating Config: {e}")
 
 def increment_coupon_usage(code: str) -> bool:
-    """Increment the usage count for a coupon. Returns True if successful."""
     try:
         sheet = get_sheet("Coupons")
         records = sheet.get_all_records()
@@ -195,11 +194,8 @@ def admin_required(auth: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
 @app.post("/api/admin/upload-image")
 async def upload_image(file: UploadFile = File(...), _=Depends(admin_required)):
     try:
-        # Validate file type
         if not file.content_type.startswith("image/"):
             raise HTTPException(status_code=400, detail="File must be an image")
-        
-        # Upload to Cloudinary
         result = cloudinary.uploader.upload(
             file.file,
             folder="awwalumart-products",
@@ -267,10 +263,6 @@ async def delete_coupon(code: str, _=Depends(admin_required)):
 # ---------- Public Coupon Validation ----------
 @app.get("/api/validate-coupon")
 async def validate_coupon(code: str, total: float = 0):
-    """
-    Validate a coupon code with an optional order total.
-    Query params: ?code=SAVE10&total=5000
-    """
     try:
         sheet = get_sheet("Coupons")
         records = sheet.get_all_records()
@@ -350,7 +342,7 @@ async def log_order(data: dict):
             data.get("phone", ""),
             data.get("address", ""),
             data.get("items", ""),
-            data.get("product_ids", ""),   # <-- NEW: store product IDs
+            data.get("product_ids", ""),
             data.get("total", "0"),
             "Pending",
             data.get("coupon_code", "")
@@ -364,12 +356,11 @@ async def log_order(data: dict):
 
     return {"message": "Order processed"}
 
+# ---------- Admin Product Management ----------
 @app.post("/api/admin/products")
 async def create_product(data: dict, _=Depends(admin_required)):
     try:
         sheet = get_gspread_client().open_by_key(SHEET_ID).sheet1
-        # Debug: print the data
-        print(f"Creating product: {data}")
         sheet.append_row([
             data.get("id", ""),
             data.get("name", ""),
@@ -430,6 +421,15 @@ async def debug_coupon(code: str):
                     "min_order": float(row.get("Min Order Amount") or 0)
                 }
         return {"error": "Coupon not found"}
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.get("/api/debug-sheet-headers")
+async def debug_sheet_headers(_=Depends(admin_required)):
+    try:
+        sheet = get_gspread_client().open_by_key(SHEET_ID).sheet1
+        headers = sheet.row_values(1)
+        return {"headers": headers}
     except Exception as e:
         return {"error": str(e)}
 
