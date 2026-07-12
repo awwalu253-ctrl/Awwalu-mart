@@ -78,10 +78,25 @@
                         </select>
                     </div>
                 </div>
+
+                <!-- IMAGE UPLOAD SECTION -->
                 <div class="form-group">
-                    <label>Image URL <span class="required">*</span></label>
-                    <input type="url" id="productImage" placeholder="https://res.cloudinary.com/your-cloud/image/upload/product.jpg" required>
+                    <label>Product Image <span class="required">*</span></label>
+                    <div class="upload-wrapper">
+                        <input type="url" id="productImage" placeholder="https://res.cloudinary.com/..." required />
+                        <div class="upload-area">
+                            <input type="file" id="imageUpload" accept="image/*" />
+                            <button type="button" id="uploadImageBtn" class="btn-secondary">
+                                <i class="fas fa-cloud-upload-alt"></i> Upload Image
+                            </button>
+                        </div>
+                        <div id="uploadProgress" style="display:none; margin-top:8px;">
+                            <span style="font-size:13px; color:#8a8078;">Uploading...</span>
+                            <div class="progress-bar"><div class="progress-fill" id="uploadProgressFill" style="width:0%;"></div></div>
+                        </div>
+                    </div>
                 </div>
+
                 <div class="form-group">
                     <label>Description</label>
                     <textarea id="productDescription" rows="2" placeholder="Product description"></textarea>
@@ -119,8 +134,7 @@
                 ...options,
                 headers: {
                     ...options.headers,
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+                    'Authorization': `Bearer ${token}`
                 }
             });
             if (res.status === 401) {
@@ -155,6 +169,51 @@
             `).join('');
         }
 
+        // ---------- IMAGE UPLOAD ----------
+        document.getElementById('uploadImageBtn').addEventListener('click', async function() {
+            const fileInput = document.getElementById('imageUpload');
+            const file = fileInput.files[0];
+            if (!file) {
+                alert('Please select an image file first.');
+                return;
+            }
+
+            const progress = document.getElementById('uploadProgress');
+            const progressFill = document.getElementById('uploadProgressFill');
+            progress.style.display = 'block';
+            progressFill.style.width = '0%';
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const res = await fetchWithAuth(`${API_BASE}/admin/upload-image`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!res.ok) {
+                    const error = await res.json();
+                    throw new Error(error.detail || 'Upload failed');
+                }
+
+                const data = await res.json();
+                document.getElementById('productImage').value = data.url;
+
+                progressFill.style.width = '100%';
+                setTimeout(() => {
+                    progress.style.display = 'none';
+                    progressFill.style.width = '0%';
+                }, 500);
+                alert('✅ Image uploaded successfully!');
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert('Upload failed: ' + error.message);
+                progress.style.display = 'none';
+            }
+        });
+
+        // ---------- CRUD ----------
         document.getElementById('createProductBtn').addEventListener('click', () => {
             isEditing = false;
             document.getElementById('modalTitle').textContent = 'Add New Product';

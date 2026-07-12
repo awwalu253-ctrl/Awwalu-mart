@@ -260,6 +260,22 @@ td code { background: #f0ebe4; padding: 2px 8px; border-radius: 4px; font-size: 
 .btn-sm { padding: 4px 14px; font-size: 12px; border-radius: 6px; }
 .btn-sm i { margin-right: 4px; }
 
+.btn-secondary {
+    background: #4a443e;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.btn-secondary:hover { background: #2d2a24; }
+.btn-secondary i { font-size: 14px; }
+
 /* ========================================
    MODALS
    ======================================== */
@@ -317,6 +333,46 @@ td code { background: #f0ebe4; padding: 2px 8px; border-radius: 4px; font-size: 
 }
 
 /* ========================================
+   IMAGE UPLOAD
+   ======================================== */
+.upload-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.upload-area {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.upload-area input[type="file"] {
+    flex: 1;
+    padding: 8px;
+    border: 1px dashed #f0ebe4;
+    border-radius: 8px;
+    background: #faf8f5;
+    font-size: 13px;
+    min-width: 150px;
+}
+.upload-area input[type="file"]:hover {
+    border-color: #b8860b;
+}
+.progress-bar {
+    background: #f0ebe4;
+    border-radius: 4px;
+    height: 6px;
+    overflow: hidden;
+    margin-top: 4px;
+}
+.progress-fill {
+    background: #b8860b;
+    height: 100%;
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+/* ========================================
    RESPONSIVE
    ======================================== */
 @media (max-width: 768px) {
@@ -337,4 +393,7 @@ td code { background: #f0ebe4; padding: 2px 8px; border-radius: 4px; font-size: 
     .stats-grid { grid-template-columns: 1fr; }
     .login-box { padding: 24px; }
     .admin-nav a { font-size: 13px; padding: 6px 12px; }
+    .upload-area { flex-direction: column; align-items: stretch; }
+    .upload-area input[type="file"] { min-width: unset; }
+    .btn-secondary { justify-content: center; }
 }

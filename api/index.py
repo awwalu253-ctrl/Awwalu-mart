@@ -4,11 +4,13 @@ import uuid
 import jwt
 from datetime import datetime, timedelta
 from typing import List, Dict
-from fastapi import FastAPI, HTTPException, Request, Depends
+from fastapi import FastAPI, HTTPException, Request, Depends, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import gspread
 from google.oauth2.service_account import Credentials
+import cloudinary
+import cloudinary.uploader
 
 # ---------- FastAPI App ----------
 app = FastAPI()
@@ -25,6 +27,17 @@ ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
 JWT_SECRET = ADMIN_PASSWORD
 JWT_ALGORITHM = "HS256"
 TOKEN_EXPIRY_HOURS = 24
+
+# ---------- Cloudinary Configuration ----------
+CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME", "dszfpg8hj")
+CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY", "")
+CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET", "")
+
+cloudinary.config(
+    cloud_name=CLOUDINARY_CLOUD_NAME,
+    api_key=CLOUDINARY_API_KEY,
+    api_secret=CLOUDINARY_API_SECRET
+)
 
 # ---------- Google Sheets Helpers ----------
 SHEET_ID = "1ZcHPR7V30AXlKAeaVAzaVn-F3Hk2hNSh8LicIBfloyo"
@@ -84,7 +97,7 @@ def increment_coupon_usage(code: str) -> bool:
         for i, row in enumerate(records, start=2):
             if row.get("Code") == code:
                 current = int(row.get("Used Count") or 0)
-                sheet.update_cell(i, 6, current + 1)  # Column 6 = Used Count
+                sheet.update_cell(i, 6, current + 1)
                 print(f"Incremented coupon {code} from {current} to {current+1}")
                 return True
         return False
@@ -177,6 +190,24 @@ def admin_required(auth: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
     if not verify_token(auth.credentials):
         raise HTTPException(status_code=401, detail="Unauthorized")
     return True
+
+# ---------- Image Upload ----------
+@app.post("/api/admin/upload-image")
+async def upload_image(file: UploadFile = File(...), _=Depends(admin_required)):
+    try:
+        # Validate file type
+        if not file.content_type.startswith("image/"):
+            raise HTTPException(status_code=400, detail="File must be an image")
+        
+        # Upload to Cloudinary
+        result = cloudinary.uploader.upload(
+            file.file,
+            folder="awwalumart-products",
+            transformation={"quality": "auto", "fetch_format": "auto"}
+        )
+        return {"url": result["secure_url"]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # ---------- Coupon Endpoints ----------
 @app.get("/api/admin/coupons")
@@ -310,7 +341,6 @@ async def get_orders(_=Depends(admin_required)):
 
 @app.post("/api/admin/orders")
 async def log_order(data: dict):
-    # Log order to sheet (public endpoint)
     try:
         sheet = get_sheet("Orders")
         sheet.append_row([
@@ -326,9 +356,7 @@ async def log_order(data: dict):
         ])
     except Exception as e:
         print(f"Order logging error: {e}")
-        # Continue to increment coupon even if order logging fails
 
-    # Increment coupon usage if a coupon was used
     coupon_code = data.get("coupon_code")
     if coupon_code:
         increment_coupon_usage(coupon_code)
@@ -386,7 +414,6 @@ async def delete_product(product_id: str, _=Depends(admin_required)):
 # ---------- Debug Endpoints ----------
 @app.get("/api/debug-coupon")
 async def debug_coupon(code: str):
-    """Check coupon details (for debugging)."""
     try:
         sheet = get_sheet("Coupons")
         records = sheet.get_all_records()
