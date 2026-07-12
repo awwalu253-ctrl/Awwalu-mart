@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="admin.css">
 </head>
+
 <body>
     <nav class="admin-nav">
         <h1>🛠️ Admin Panel</h1>
@@ -38,9 +40,11 @@
                     </tr>
                 </thead>
                 <tbody id="productList">
-                    <tr><td colspan="8" style="text-align:center; padding:40px; color:#8a8078;">
-                        <i class="fas fa-spinner spinner"></i> Loading products...
-                    </td></tr>
+                    <tr>
+                        <td colspan="8" style="text-align:center; padding:40px; color:#8a8078;">
+                            <i class="fas fa-spinner spinner"></i> Loading products...
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -92,7 +96,9 @@
                         </div>
                         <div id="uploadProgress" style="display:none; margin-top:8px;">
                             <span style="font-size:13px; color:#8a8078;">Uploading...</span>
-                            <div class="progress-bar"><div class="progress-fill" id="uploadProgressFill" style="width:0%;"></div></div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="uploadProgressFill" style="width:0%;"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -249,7 +255,7 @@
         window.deleteProduct = deleteProduct;
 
         // ---------- Image Upload ----------
-        document.getElementById('uploadImageBtn').addEventListener('click', async function() {
+        document.getElementById('uploadImageBtn').addEventListener('click', async function () {
             const fileInput = document.getElementById('imageUpload');
             const file = fileInput.files[0];
             if (!file) {
@@ -295,31 +301,34 @@
         // ---------- Submit Form ----------
         document.getElementById('productForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const data = {
-                id: document.getElementById('productId').value.trim(),
-                name: document.getElementById('productName').value.trim(),
-                price: document.getElementById('productPrice').value.trim(),
-                category: document.getElementById('productCategory').value,
-                image: document.getElementById('productImage').value.trim(),
-                description: document.getElementById('productDescription').value.trim(),
-                stock: document.getElementById('productStock').value,
-                featured: document.getElementById('productFeatured').value
-            };
+            const data = { /* ... */ };
 
-            if (isEditing) {
-                const id = document.getElementById('editProductId').value;
-                await fetchWithAuth(`${API_BASE}/admin/products/${id}`, {
-                    method: 'PUT',
-                    body: JSON.stringify(data)
-                });
-            } else {
-                await fetchWithAuth(`${API_BASE}/admin/products`, {
-                    method: 'POST',
-                    body: JSON.stringify(data)
-                });
+            try {
+                let res;
+                if (isEditing) {
+                    const id = document.getElementById('editProductId').value;
+                    res = await fetchWithAuth(`${API_BASE}/admin/products/${id}`, {
+                        method: 'PUT',
+                        body: JSON.stringify(data)
+                    });
+                } else {
+                    res = await fetchWithAuth(`${API_BASE}/admin/products`, {
+                        method: 'POST',
+                        body: JSON.stringify(data)
+                    });
+                }
+
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    alert(`Error: ${errorData.detail || 'Unknown error'}`);
+                    return;
+                }
+
+                document.getElementById('productModal').style.display = 'none';
+                loadProducts();
+            } catch (error) {
+                alert('Failed to save product: ' + error.message);
             }
-            document.getElementById('productModal').style.display = 'none';
-            loadProducts();
         });
 
         // ---------- Logout ----------
@@ -333,4 +342,5 @@
         loadProducts();
     </script>
 </body>
+
 </html>

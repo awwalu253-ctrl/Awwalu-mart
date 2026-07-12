@@ -364,11 +364,12 @@ async def log_order(data: dict):
 
     return {"message": "Order processed"}
 
-# ---------- Admin Product Management ----------
 @app.post("/api/admin/products")
 async def create_product(data: dict, _=Depends(admin_required)):
     try:
         sheet = get_gspread_client().open_by_key(SHEET_ID).sheet1
+        # Debug: print the data
+        print(f"Creating product: {data}")
         sheet.append_row([
             data.get("id", ""),
             data.get("name", ""),
@@ -381,6 +382,7 @@ async def create_product(data: dict, _=Depends(admin_required)):
         ])
         return {"message": "Product created"}
     except Exception as e:
+        print(f"Error creating product: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.put("/api/admin/products/{product_id}")
