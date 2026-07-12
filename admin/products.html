@@ -302,7 +302,7 @@
             }
         });
 
-        // ---------- Submit Form (Robust Error Handling) ----------
+        // ---------- Submit Form (with full debugging) ----------
         document.getElementById('productForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -332,8 +332,14 @@
                     });
                 }
 
-                // Read response body once
+                // --- DEBUG: log everything ---
+                console.log('Response status:', res.status);
+                console.log('Response headers:', res.headers);
+
+                // Read raw text first
                 const rawText = await res.text();
+                console.log('Raw response body:', rawText);
+
                 let responseData = null;
                 let errorMsg = '';
 
@@ -341,21 +347,23 @@
                 try {
                     responseData = JSON.parse(rawText);
                 } catch (e) {
+                    // Not JSON – use raw text
                     errorMsg = rawText || 'Unknown error';
                 }
 
                 if (!res.ok) {
-                    // If JSON, extract detail
+                    // If we have JSON, extract detail
                     if (responseData && typeof responseData === 'object') {
-                        errorMsg = responseData.detail || JSON.stringify(responseData);
+                        errorMsg = responseData.detail || responseData.message || JSON.stringify(responseData);
                     } else if (!errorMsg) {
                         errorMsg = `Server error (${res.status})`;
                     }
                     alert(`❌ Error: ${errorMsg}`);
-                    console.error('Error response:', {
+                    console.error('Error details:', {
                         status: res.status,
                         headers: res.headers,
-                        body: rawText
+                        body: rawText,
+                        parsed: responseData
                     });
                     return;
                 }

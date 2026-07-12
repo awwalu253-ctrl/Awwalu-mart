@@ -493,6 +493,10 @@ async def get_product_by_id(product_id: str):
 async def get_all_bundles():
     return get_bundles()
 
+@app.post("/api/test-product")
+async def test_product(data: dict):
+    return {"received": data}
+
 @app.get("/api/bundles/{bundle_id}")
 async def get_bundle_by_id(bundle_id: str):
     all_bundles = get_bundles()
